@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatTile } from "@/components/ui/stat-tile";
 import { CHART_COLORS } from "@/components/dashboard/CategoryDonut";
 import { Skeleton } from "@/components/ui/skeleton";
-import { money } from "@/lib/utils";
+import { money, cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Transaction } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
