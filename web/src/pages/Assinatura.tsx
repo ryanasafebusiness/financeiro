@@ -30,6 +30,8 @@ interface PlanItem {
   price: number;
   duration_days: number;
   message_limit: number;
+  /** true quando o plano tem preço avulso — habilita MB WAY / Multibanco. */
+  avulso_disponivel?: boolean;
 }
 
 interface PlansResponse {
@@ -84,8 +86,15 @@ export default function Assinatura() {
   const urgentDays = days !== null && days <= 1;
   const isUrgent = isTrial && active && (urgentQuota || urgentDays);
 
-  /** Abre a Checkout Session da Stripe para o plano escolhido. */
-  const handleSubscribe = async (planId?: string) => {
+  /**
+   * Abre a Checkout Session da Stripe para o plano escolhido.
+   * `payment` é a compra única — o caminho que MB WAY e Multibanco aceitam,
+   * já que nenhum dos dois faz cobrança recorrente.
+   */
+  const handleSubscribe = async (
+    planId?: string,
+    mode: "subscription" | "payment" = "subscription",
+  ) => {
     const id = planId ?? plansData?.plans[0]?.id;
     if (!id) {
       toast.error("Nenhum plano disponível no momento.");
@@ -93,7 +102,7 @@ export default function Assinatura() {
     }
     setCheckoutPlanId(id);
     try {
-      const { url } = await api.createCheckout(id);
+      const { url } = await api.createCheckout(id, mode);
       // Mesma aba: o retorno da Stripe traz o usuário de volta a /assinatura.
       window.location.assign(url);
     } catch (err) {
@@ -274,13 +283,25 @@ export default function Assinatura() {
                   <CardTitle>{plan.name}</CardTitle>
                   <CardDescription>{plan.duration_days} dias</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1 space-y-2">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-metric font-semibold tabular text-foreground">
-                      {money(Number(plan.price))}
-                    </span>
+                <CardContent className="flex-1 space-y-3">
+                  <div>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-metric font-semibold tabular text-foreground">
+                        {money(Number(plan.price))}
+                      </span>
+                      <span className="text-label text-muted-foreground">IVA incl.</span>
+                    </div>
+                    {/* Equivalente mensal: é assim que se compara plano longo
+                        com plano curto sem fazer conta de cabeça. */}
+                    {plan.duration_days > 31 && (
+                      <p className="mt-0.5 text-label tabular text-muted-foreground">
+                        equivale a {money((Number(plan.price) / plan.duration_days) * 30)}/mês
+                      </p>
+                    )}
                   </div>
-                  <ul className="space-y-2 pt-1 text-meta text-muted-foreground">
+
+                  <div className="h-px bg-border" />
+                  <ul className="space-y-2 text-meta text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                       {plan.duration_days} dias de acesso
@@ -297,7 +318,7 @@ export default function Assinatura() {
                     </li>
                   </ul>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex-col items-stretch gap-2">
                   <Button
                     className="w-full"
                     variant={isHighlighted ? "default" : "outline"}
@@ -309,6 +330,16 @@ export default function Assinatura() {
                     )}
                     Assinar
                   </Button>
+                  {plan.avulso_disponivel && (
+                    <button
+                      type="button"
+                      onClick={() => handleSubscribe(plan.id, "payment")}
+                      disabled={checkoutPlanId !== null}
+                      className="text-label text-muted-foreground underline-offset-4 transition-colors duration-fast hover:text-foreground hover:underline disabled:opacity-50"
+                    >
+                      Pagar uma vez com MB WAY ou Multibanco
+                    </button>
+                  )}
                 </CardFooter>
               </Card>
             );

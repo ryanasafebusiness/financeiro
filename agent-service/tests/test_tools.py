@@ -60,6 +60,20 @@ def test_registrar_valor_zero_ou_invalido_nao_registra(ctx, db, valor):
     assert db.rows("transactions") == []          # nada criado
 
 
+def test_registrar_respeita_moeda_explicita(ctx, db):
+    r = registrar_transacao.execute(
+        ctx, tipo="gasto", valor=25, titulo="Almoço", moeda="BRL"
+    )
+    assert r["registrado"]["moeda"] == "BRL"
+    assert db.rows("transactions")[0]["currency"] == "BRL"
+
+
+def test_registrar_sem_moeda_usa_preferencia_do_perfil(ctx, db):
+    ctx["profile"]["currency"] = "BRL"
+    r = registrar_transacao.execute(ctx, tipo="receita", valor=100, titulo="Pix")
+    assert r["registrado"]["moeda"] == "BRL"
+
+
 # ── consultar_transacoes ─────────────────────────────────────────────────────
 @pytest.fixture
 def tx3(ctx, db):

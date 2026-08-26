@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 
 from app.config import settings
+from app.currency import format_money, normalize_currency
 from app.datetime_utils import parse_dt
 from app.prompts import OUTPUT_CONTRACT
 from app.services import supabase_svc, finance_svc, settings_svc, openai_client
@@ -48,7 +49,8 @@ def build_context(profile: dict) -> str:
     tz = ZoneInfo(profile.get("timezone") or settings.app_tz)
     now = datetime.now(tz)
     d0, d1 = finance_svc.month_bounds(now.date())
-    s = finance_svc.summary(profile["id"], d0, d1)
+    currency = normalize_currency(profile.get("currency"))
+    s = finance_svc.summary(profile["id"], d0, d1, currency)
     goals = finance_svc.list_goals(profile["id"])
     limits = finance_svc.limit_status(profile["id"])
     categories = finance_svc.list_categories(profile["id"])
@@ -58,8 +60,10 @@ def build_context(profile: dict) -> str:
         f"Nome do usuário: {profile.get('name') or 'desconhecido'}",
         f"Data e hora agora: {now.strftime('%d/%m/%Y %H:%M')} ({tz.key})",
         f"Plano: {profile.get('plan') or 'Trial'}",
-        f"Mês atual: receitas {s['total_income']:.2f} €, gastos {s['total_expense']:.2f} €, "
-        f"saldo {s['balance']:.2f} € ({s['count']} lançamentos).",
+        f"Moeda preferida: {currency}. Se a mensagem disser euro/€ use EUR; se disser real/reais/R$ use BRL; sem moeda explícita use {currency}.",
+        f"Mês atual em {currency}: receitas {s['total_income']:.2f} {currency}, "
+        f"gastos {s['total_expense']:.2f} {currency}, saldo {s['balance']:.2f} {currency} "
+        f"({s['count']} lançamentos).",
     ]
     if categories:
         cat_lines = []
@@ -265,13 +269,8 @@ def _attach(reply: dict, cards: list[str], trace: list[dict]) -> dict:
 
 # ── Recibo determinístico de transação (enviado pelo pipeline) ─────────────────
 def _fmt_eur(value) -> str:
-    """1234.5 -> '1.234,50 €' (ponto de milhar, vírgula decimal, símbolo ao final)."""
-    try:
-        n = float(value)
-    except (TypeError, ValueError):
-        n = 0.0
-    digits = f"{n:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"{digits} €"
+    """Compatibilidade: formata explicitamente em euros."""
+    return format_money(value, "EUR")
 
 
 def _fmt_date(iso) -> str:
@@ -297,7 +296,7 @@ def format_transaction_card(reg: dict) -> str:
     header = "✅ Receita registrada" if is_income else "✅ Gasto registrado"
     money_emoji = "💰" if is_income else "💸"
 
-    lines = [header, f"{money_emoji} {_fmt_eur(reg.get('valor'))}"]
+    lines = [header, f"{money_emoji} {format_money(reg.get('valor'), reg.get('moeda') or 'EUR')}"]
     titulo = (reg.get("titulo") or "").strip()
     if titulo:
         lines.append(f"📌 {titulo}")

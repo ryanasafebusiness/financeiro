@@ -71,7 +71,7 @@ export function currentMonthChip(today = new Date()): string {
  * os totais oficiais do mês continuam vindo de /api/me — estes números servem
  * para comparação com o mês anterior, séries temporais e sparklines.
  */
-export function useDashboardData(range: FlowRange) {
+export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EUR") {
   const { user } = useAuth();
   const today = useMemo(() => new Date(), []);
 
@@ -85,7 +85,7 @@ export function useDashboardData(range: FlowRange) {
   const to = useMemo(() => iso(today), [today]);
 
   const { data: rows, isLoading } = useQuery({
-    queryKey: ["dashboard-series", user?.id, from, to],
+    queryKey: ["dashboard-series", user?.id, from, to, currency],
     enabled: !!user,
     queryFn: async (): Promise<Transaction[]> => {
       const { data, error } = await supabase
@@ -93,6 +93,7 @@ export function useDashboardData(range: FlowRange) {
         .select("*")
         .gte("occurred_on", from)
         .lte("occurred_on", to)
+        .eq("currency", currency)
         .order("occurred_on", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Transaction[];

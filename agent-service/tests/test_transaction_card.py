@@ -28,6 +28,13 @@ def test_card_receita_usa_rotulo_e_emoji_proprios():
     assert "💰 2.000,00 €" in card
 
 
+def test_card_em_reais():
+    card = A.format_transaction_card({
+        "tipo": "gasto", "valor": 80.5, "moeda": "BRL", "titulo": "Cinema"
+    })
+    assert "💸 R$ 80,50" in card
+
+
 def test_card_omite_campos_ausentes():
     card = A.format_transaction_card({"tipo": "gasto", "valor": 10, "titulo": "Pão"})
     assert "📍" not in card          # sem local

@@ -82,6 +82,7 @@ def _seed(db: FakeSupabase, *, premium=True, ai_online=True, message_limit=0, is
         "messages_this_month": 0,
         "message_limit": message_limit,
         "timezone": "America/Fortaleza",
+        "currency": "EUR",
     })
     # Categorias do próprio usuário (modelo por-usuário: cada perfil tem a sua cópia).
     for name, typ, emoji, desc in [

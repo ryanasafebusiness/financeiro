@@ -67,12 +67,19 @@ export const api = {
   async plans<T = any>(): Promise<T> {
     return handle(await fetch(apiUrl("/api/plans")));
   },
-  /** Abre uma Checkout Session da Stripe e devolve a URL hospedada. */
-  async createCheckout(planId: string): Promise<{ url: string; session_id: string }> {
+  /**
+   * Abre uma Checkout Session da Stripe e devolve a URL hospedada.
+   * mode "subscription" renova sozinho; "payment" é a compra única, único
+   * caminho que MB WAY e Multibanco conseguem pagar.
+   */
+  async createCheckout(
+    planId: string,
+    mode: "subscription" | "payment" = "subscription",
+  ): Promise<{ url: string; session_id: string }> {
     return handle(await fetch(apiUrl("/api/checkout"), {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ plan_id: planId }),
+      body: JSON.stringify({ plan_id: planId, mode }),
     }));
   },
 

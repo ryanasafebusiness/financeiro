@@ -19,6 +19,8 @@ DEFINITION = {
                 "data_inicio": {"type": "string", "description": "'AAAA-MM-DD' (opcional)."},
                 "data_fim": {"type": "string", "description": "'AAAA-MM-DD' (opcional)."},
                 "limite": {"type": "integer", "description": "Máximo de itens (padrão 30)."},
+                "moeda": {"type": "string", "enum": ["EUR", "BRL"],
+                          "description": "Moeda a consultar; padrão é a moeda preferida do usuário."},
             },
         },
     },
@@ -26,22 +28,24 @@ DEFINITION = {
 
 
 def execute(ctx: dict, tipo: str = "todos", categoria: str = "",
-            data_inicio: str = "", data_fim: str = "", limite: int = 30) -> dict:
+            data_inicio: str = "", data_fim: str = "", limite: int = 30, moeda: str = "") -> dict:
     type_ = None
     if str(tipo).lower().startswith("gas"):
         type_ = "expense"
     elif str(tipo).lower().startswith("rec"):
         type_ = "income"
 
+    currency = moeda or (ctx.get("profile") or {}).get("currency") or "EUR"
     rows = finance_svc.list_transactions(
         ctx["user_id"], type_=type_, category=categoria or None,
         date_from=data_inicio or None, date_to=data_fim or None,
-        limit=min(int(limite or 30), 200),
+        limit=min(int(limite or 30), 200), currency=currency,
     )
     itens = [{
         "id": r["id"],
         "tipo": "gasto" if r["type"] == "expense" else "receita",
         "valor": float(r["amount"]),
+        "moeda": r.get("currency", currency),
         "categoria": r.get("category"),
         "descricao": r.get("description"),
         "data": r.get("occurred_on"),
@@ -52,6 +56,7 @@ def execute(ctx: dict, tipo: str = "todos", categoria: str = "",
     return {
         "ok": True,
         "total_itens": len(itens),
+        "moeda": currency,
         "resumo": {"receitas": round(income, 2), "gastos": round(expense, 2),
                    "saldo": round(income - expense, 2)},
         "itens": itens,

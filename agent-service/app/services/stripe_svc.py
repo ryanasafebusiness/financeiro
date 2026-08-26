@@ -46,6 +46,12 @@ def reset_cache() -> None:
     _client, _client_key = None, None
 
 
+#: modos aceitos. "subscription" renova sozinho (cartão/SEPA); "payment" é a
+#: compra avulsa, único caminho que MB WAY e Multibanco conseguem pagar — ambos
+#: têm "Recurring payments: No" na Stripe.
+MODES = ("subscription", "payment")
+
+
 def create_checkout_session(
     *,
     price_id: str,
@@ -53,36 +59,49 @@ def create_checkout_session(
     plan_id: str,
     success_url: str,
     cancel_url: str,
+    mode: str = "subscription",
     customer_email: str | None = None,
     phone: str | None = None,
 ) -> dict:
-    """Abre uma Checkout Session em modo assinatura e devolve {id, url}.
+    """Abre uma Checkout Session e devolve {id, url}.
 
     O vínculo com o usuário é feito em três lugares de propósito:
       • client_reference_id  -> chega em checkout.session.completed;
       • metadata             -> idem, redundância barata;
       • subscription_data.metadata -> é o ÚNICO que sobrevive nas RENOVAÇÕES
         (invoice.paid meses depois não conhece a sessão original).
+
+    Em `mode="payment"` não há assinatura: o acesso é concedido por
+    `plans.duration_days` quando o pagamento confirma.
     """
+    if mode not in MODES:
+        raise ValueError(f"mode inválido: {mode!r} (use um de {MODES})")
+
+    link = {"profile_id": profile_id, "plan_id": plan_id}
+    if phone:
+        # Rede de segurança: se o profile_id sumir, o webhook ainda casa o
+        # pagamento pelo telefone do WhatsApp.
+        link["phone"] = phone
+
     params: dict = {
-        "mode": "subscription",
+        "mode": mode,
         "line_items": [{"price": price_id, "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "client_reference_id": profile_id,
-        "metadata": {"profile_id": profile_id, "plan_id": plan_id},
-        "subscription_data": {"metadata": {"profile_id": profile_id, "plan_id": plan_id}},
+        "metadata": dict(link),
         # O tenant do ZapWallet é o telefone do WhatsApp; a Stripe não coleta
         # telefone por padrão, então pedimos explicitamente.
         "phone_number_collection": {"enabled": True},
         "allow_promotion_codes": True,
     }
+    if mode == "subscription":
+        params["subscription_data"] = {"metadata": dict(link)}
+    else:
+        params["payment_intent_data"] = {"metadata": dict(link)}
+
     if customer_email:
         params["customer_email"] = customer_email
-    if phone:
-        # Guardado no metadata como rede de segurança: se o profile_id sumir, o
-        # webhook ainda consegue casar o pagamento pelo telefone do WhatsApp.
-        params["subscription_data"]["metadata"]["phone"] = phone
 
     # namespace v1 (o acesso direto .checkout está deprecado no SDK 13+)
     session = get().v1.checkout.sessions.create(params=params)

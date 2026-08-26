@@ -19,8 +19,9 @@ import {
 } from "@/components/ui/dialog";
 import { cn, money, formatDate, formatDateTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import type { Transaction, Category } from "@/integrations/supabase/types";
+import type { Transaction, Category, CurrencyCode } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -53,12 +54,13 @@ interface FormState {
   description: string;
   location: string;
   occurred_on: string;
+  currency: CurrencyCode;
 }
 
 const iso = (d: Date): string => d.toISOString().slice(0, 10);
 const todayIso = (): string => iso(new Date());
 
-function emptyForm(): FormState {
+function emptyForm(currency: CurrencyCode = "EUR"): FormState {
   return {
     type: "expense",
     amount: "",
@@ -67,6 +69,7 @@ function emptyForm(): FormState {
     description: "",
     location: "",
     occurred_on: todayIso(),
+    currency,
   };
 }
 
@@ -95,6 +98,8 @@ function monthRange(month: string): { first: string; last: string } {
 
 export default function Transacoes() {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const selectedCurrency = profile?.currency ?? "EUR";
   const qc = useQueryClient();
 
   const monthOptions = useMemo(() => buildMonthOptions(), []);
@@ -112,14 +117,15 @@ export default function Transacoes() {
     data: transactions = [],
     isLoading,
   } = useQuery<Transaction[]>({
-    queryKey: ["transactions", user?.id, typeFilter, monthFilter],
-    enabled: !!user,
+    queryKey: ["transactions", user?.id, typeFilter, monthFilter, selectedCurrency],
+    enabled: !!user && !!profile,
     queryFn: async () => {
       let query = supabase
         .from("transactions")
         .select("*")
         .gte("occurred_on", first)
         .lte("occurred_on", last)
+        .eq("currency", selectedCurrency)
         .order("occurred_on", { ascending: false });
       if (typeFilter !== "all") {
         query = query.eq("type", typeFilter);
@@ -170,6 +176,7 @@ export default function Transacoes() {
       const payload = {
         type: form.type,
         amount,
+        currency: form.currency,
         title: form.title ? form.title : null,
         category: form.category ? form.category : null,
         description: form.description ? form.description : null,
@@ -216,7 +223,7 @@ export default function Transacoes() {
 
   function openNew() {
     setEditingId(null);
-    setForm(emptyForm());
+    setForm(emptyForm(selectedCurrency));
     setDialogOpen(true);
   }
 
@@ -230,6 +237,7 @@ export default function Transacoes() {
       description: t.description ?? "",
       location: t.location ?? "",
       occurred_on: t.occurred_on,
+      currency: t.currency ?? selectedCurrency,
     });
     setDialogOpen(true);
   }
@@ -237,13 +245,13 @@ export default function Transacoes() {
   function closeDialog() {
     setDialogOpen(false);
     setEditingId(null);
-    setForm(emptyForm());
+    setForm(emptyForm(selectedCurrency));
   }
 
   function handleDelete(t: Transaction) {
     if (
       window.confirm(
-        `Excluir esta transação de ${money(Number(t.amount) || 0)}? Esta ação não pode ser desfeita.`
+        `Excluir esta transação de ${money(Number(t.amount) || 0, t.currency)}? Esta ação não pode ser desfeita.`
       )
     ) {
       deleteMutation.mutate(t.id);
@@ -436,7 +444,7 @@ export default function Transacoes() {
                             isIncome ? "text-positive" : "text-foreground"
                           )}
                         >
-                          {isIncome ? "+" : "\u2212"} {money(amount)}
+                          {isIncome ? "+" : "\u2212"} {money(amount, t.currency)}
                         </div>
 
                         {/* Ações — discretas, aparecem no hover em telas grandes */}
@@ -506,8 +514,9 @@ export default function Transacoes() {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="form-amount">Valor (€)</Label>
+          <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
+            <div className="space-y-1.5">
+            <Label htmlFor="form-amount">Valor</Label>
             <Input
               id="form-amount"
               type="number"
@@ -520,6 +529,18 @@ export default function Transacoes() {
                 setForm((f) => ({ ...f, amount: e.target.value }))
               }
             />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="form-currency">Moeda</Label>
+              <Select
+                id="form-currency"
+                value={form.currency}
+                onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value as CurrencyCode }))}
+              >
+                <option value="EUR">Euro (€)</option>
+                <option value="BRL">Real (R$)</option>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-1.5">

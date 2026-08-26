@@ -1,6 +1,7 @@
 """Tool: registrar_transacao — cria um gasto (expense) ou receita (income)."""
 from app.services import finance_svc
 from app.tools._common import INVALID_AMOUNT, parse_amount
+from app.currency import normalize_currency
 
 DEFINITION = {
     "type": "function",
@@ -15,7 +16,9 @@ DEFINITION = {
             "properties": {
                 "tipo": {"type": "string", "enum": ["gasto", "receita"],
                          "description": "gasto (saída de dinheiro) ou receita (entrada)."},
-                "valor": {"type": "number", "description": "Valor em euros, ex: 80.50"},
+                "valor": {"type": "number", "description": "Valor numérico, ex: 80.50"},
+                "moeda": {"type": "string", "enum": ["EUR", "BRL"],
+                          "description": "EUR se disser euro/€; BRL se disser real/reais/R$. Se omitir, use a moeda preferida do contexto."},
                 "titulo": {"type": "string",
                            "description": "Título curto e capitalizado da transação, ex: 'Cinema com a Gata', 'Mercado do Mês'."},
                 "descricao": {"type": "string",
@@ -34,16 +37,17 @@ DEFINITION = {
 
 
 def execute(ctx: dict, tipo: str, valor: float, titulo: str = "", categoria: str = "",
-            descricao: str = "", local: str = "", data: str = "") -> dict:
+            descricao: str = "", local: str = "", data: str = "", moeda: str = "") -> dict:
     valor = parse_amount(valor)
     if valor is None:        # sem valor / zero / negativo -> pede, não registra
         return INVALID_AMOUNT
     type_ = "income" if str(tipo).lower().startswith("rec") else "expense"
     # data vazia/'hoje' -> finance usa agora (data e hora); senão usa a data informada (meio-dia)
     occurred_on = None if str(data).strip().lower() in ("", "hoje", "today") else data
+    currency = normalize_currency(moeda, (ctx.get("profile") or {}).get("currency") or "EUR")
     tx = finance_svc.create_transaction(
         ctx["user_id"], type_, valor, categoria, descricao, occurred_on,
-        title=titulo, location=local,
+        title=titulo, location=local, currency=currency,
     )
     result = {
         "ok": True,
@@ -52,6 +56,7 @@ def execute(ctx: dict, tipo: str, valor: float, titulo: str = "", categoria: str
             "tipo": tipo,
             "titulo": tx.get("title"),
             "valor": float(tx.get("amount", valor)),
+            "moeda": tx.get("currency", currency),
             "categoria": tx.get("category"),
             "descricao": tx.get("description"),
             "local": tx.get("location"),

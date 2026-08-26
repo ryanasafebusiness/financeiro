@@ -1,17 +1,22 @@
 """Webhook da Stripe — libera/renova/revoga o acesso premium (assinaturas).
 
 Eventos tratados
-  checkout.session.completed     primeira compra: libera na hora (boa UX no retorno)
-  invoice.paid                   primeira cobrança E renovações: fonte da verdade do período
-  customer.subscription.deleted  assinatura encerrada: revoga
-  invoice.payment_failed         só auditado (a Stripe ainda vai tentar de novo)
-  customer.subscription.updated  só auditado
+  checkout.session.completed                compra concluída: libera SE já estiver paga
+  checkout.session.async_payment_succeeded  Multibanco pago dias depois: libera
+  checkout.session.async_payment_failed     voucher expirou: só auditado
+  invoice.paid                              primeira cobrança E renovações da assinatura
+  customer.subscription.deleted             assinatura encerrada: revoga
+  invoice.payment_failed                    só auditado (a Stripe ainda tentará de novo)
+  customer.subscription.updated             só auditado
 
-Duas garantias importantes:
+Três garantias importantes:
   • A assinatura do corpo é verificada (Stripe-Signature) com o corpo CRU.
   • `premium_until` é ATRIBUÍDO (não incrementado) a partir do fim do período da
     Stripe. Assim uma reentrega do mesmo evento — que é normal — não estende o
     acesso duas vezes.
+  • Nunca liberamos acesso sem `payment_status` pago. Multibanco é método de
+    notificação ATRASADA: o checkout.session.completed chega quando o voucher é
+    GERADO, e o cliente pode levar dias para pagar — ou nunca pagar.
 """
 import logging
 from datetime import datetime, timedelta, timezone
@@ -26,8 +31,16 @@ from app.services.supabase_svc import only_digits
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks")
 
-GRANT_EVENTS = {"checkout.session.completed", "invoice.paid"}
+GRANT_EVENTS = {
+    "checkout.session.completed",
+    "checkout.session.async_payment_succeeded",
+    "invoice.paid",
+}
 REVOKE_EVENTS = {"customer.subscription.deleted"}
+
+#: `payment_status` de uma Checkout Session que autoriza liberar o acesso.
+#: "unpaid" = voucher Multibanco gerado, mas ainda não pago.
+PAID_STATUSES = {"paid", "no_payment_required"}
 
 
 def _phone_from_e164(raw: str) -> str:
@@ -190,6 +203,19 @@ async def stripe_webhook(request: Request):
             log.info("Stripe: invoice %s não está paga (%s) — só auditado", obj.get("id"), obj.get("status"))
             return {"ok": True, "matched": True, "event": event_type}
 
+        # Checkout Session só libera quando o dinheiro entrou de verdade. Sem
+        # esta checagem, um voucher Multibanco não pago daria acesso grátis.
+        if event_type == "checkout.session.completed":
+            status = str(obj.get("payment_status") or "")
+            if status not in PAID_STATUSES:
+                log.info(
+                    "Stripe: sessão %s ainda não paga (payment_status=%s) — aguardando "
+                    "async_payment_succeeded", obj.get("id"), status,
+                )
+                return {"ok": True, "matched": True, "event": event_type, "pending": True}
+
+        # Assinatura traz o fim do período; compra avulsa (mode=payment) não tem
+        # período nenhum — aí o acesso vale `duration_days` do plano.
         end = _period_end(obj)
         until = (end or datetime.now(timezone.utc) + timedelta(days=duration_days)).isoformat()
         # reset_usage=True: trial -> pago, e cada renovação começa o mês limpo.

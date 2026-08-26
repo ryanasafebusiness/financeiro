@@ -208,6 +208,18 @@
     @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring/60;
   }
 
+  /* Ao passar o mouse na navegação, os itens não apontados recuam de leve.
+     Vem do "Animated Sidebar" do 21st.dev (@unlumen), feito aqui só com CSS.
+     Só em dispositivos com ponteiro fino — no toque não existe hover. */
+  @media (hover: hover) and (pointer: fine) {
+    .nav-dim:hover a:not(:hover):not([aria-current="page"]) {
+      opacity: 0.55;
+    }
+  }
+  .nav-dim a {
+    transition: opacity var(--duration) var(--ease-out);
+  }
+
   /* Entrada em cascata dos blocos do dashboard. */
   .stagger > * {
     /* `backwards` (e não `both`): o estado final não pode travar o transform

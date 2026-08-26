@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, Menu, Search, LogOut, CreditCard, Sparkles } from "lucide-react";
+import { Bell, Menu, Search, LogOut, CreditCard, Sparkles, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Profile } from "@/integrations/supabase/types";
+import type { CurrencyCode } from "@/lib/utils";
 
 export type Alert = {
   id: string;
@@ -27,12 +28,14 @@ export function Topbar({
   onOpenMenu,
   onOpenCommand,
   onSignOut,
+  onCurrencyChange,
 }: {
   profile?: Profile | null;
   alerts: Alert[];
   onOpenMenu: () => void;
   onOpenCommand: () => void;
   onSignOut: () => void;
+  onCurrencyChange: (currency: CurrencyCode) => void | Promise<void>;
 }) {
   const navigate = useNavigate();
 
@@ -157,6 +160,12 @@ export function Topbar({
             </DropdownItem>
             <DropdownItem icon={<Sparkles />} onSelect={() => navigate("/relatorios")}>
               Relatórios
+            </DropdownItem>
+            <DropdownItem
+              icon={<Coins />}
+              onSelect={() => onCurrencyChange(profile?.currency === "BRL" ? "EUR" : "BRL")}
+            >
+              Moeda: {profile?.currency === "BRL" ? "Real (R$)" : "Euro (€)"}
             </DropdownItem>
             <DropdownSeparator />
             <DropdownItem icon={<LogOut />} tone="danger" onSelect={onSignOut}>

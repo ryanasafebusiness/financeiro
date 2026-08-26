@@ -304,11 +304,19 @@ def append_memory(session_id: str, user_input: str, ai_output: str, tool_calls: 
 
 # ── Planos / pagamentos (Stripe) ───────────────────────────────────────────────
 def get_plan_by_price(price_id: str) -> dict | None:
-    """Plano ligado a um Price da Stripe (price_...)."""
+    """Plano ligado a um Price da Stripe (price_...).
+
+    Procura nas DUAS colunas: o mesmo plano tem um price recorrente (assinatura)
+    e outro avulso (MB WAY/Multibanco), e o webhook pode receber qualquer um.
+    """
     if not price_id:
         return None
-    res = get_db().table("plans").select("*").eq("stripe_price_id", price_id).limit(1).execute()
-    return res.data[0] if res.data else None
+    db = get_db()
+    for column in ("stripe_price_id", "stripe_price_id_onetime"):
+        res = db.table("plans").select("*").eq(column, price_id).limit(1).execute()
+        if res.data:
+            return res.data[0]
+    return None
 
 
 def get_plan_by_id(plan_id: str) -> dict | None:

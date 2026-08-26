@@ -28,6 +28,7 @@ interface Plan {
   duration_days: number;
   message_limit: number;
   stripe_price_id: string | null;
+  stripe_price_id_onetime: string | null;
   active: boolean;
 }
 
@@ -37,6 +38,7 @@ const EMPTY_FORM = {
   duration_days: "30",
   message_limit: "0",
   stripe_price_id: "",
+  stripe_price_id_onetime: "",
   active: true,
 };
 
@@ -76,6 +78,7 @@ export default function AdminPlanos() {
       duration_days: String(plan.duration_days),
       message_limit: String(plan.message_limit),
       stripe_price_id: plan.stripe_price_id ?? "",
+      stripe_price_id_onetime: plan.stripe_price_id_onetime ?? "",
       active: plan.active,
     });
     setDialogOpen(true);
@@ -133,6 +136,7 @@ export default function AdminPlanos() {
       duration_days,
       message_limit,
       stripe_price_id: form.stripe_price_id.trim(),
+      stripe_price_id_onetime: form.stripe_price_id_onetime.trim(),
       active: form.active,
     };
 
@@ -336,6 +340,24 @@ export default function AdminPlanos() {
             <p className="text-label text-muted-foreground">
               Stripe → Catálogo de produtos → seu produto → Preço → copiar o ID.
               Precisa ser um preço <strong>recorrente</strong> em EUR.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="plan-price-onetime">Price ID avulso (opcional)</Label>
+            <Input
+              id="plan-price-onetime"
+              value={form.stripe_price_id_onetime}
+              onChange={(e) =>
+                setForm({ ...form, stripe_price_id_onetime: e.target.value })
+              }
+              placeholder="price_1AbCdEf..."
+              className="font-mono text-meta"
+            />
+            <p className="text-label text-muted-foreground">
+              Preço <strong>único</strong> (não recorrente) do mesmo plano. É o que
+              destrava MB WAY e Multibanco, que não fazem cobrança automática.
+              Sem ele, o plano só aceita cartão em assinatura.
             </p>
           </div>
 

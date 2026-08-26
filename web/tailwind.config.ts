@@ -102,6 +102,18 @@ export default {
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
+        // Código errado: sacode de leve em vez de só pintar de vermelho.
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "20%": { transform: "translateX(-5px)" },
+          "40%": { transform: "translateX(4px)" },
+          "60%": { transform: "translateX(-3px)" },
+          "80%": { transform: "translateX(2px)" },
+        },
+        caret: {
+          "0%, 45%": { opacity: "1" },
+          "50%, 95%": { opacity: "0" },
+        },
       },
       animation: {
         "fade-up": "fade-up var(--duration-slow) var(--ease-out) backwards",
@@ -110,6 +122,8 @@ export default {
         "sheet-in": "sheet-in var(--duration-slow) var(--ease-out) backwards",
         "grow-x": "grow-x var(--duration-slow) var(--ease-out) backwards",
         shimmer: "shimmer 1.6s infinite",
+        shake: "shake 320ms var(--ease-out)",
+        caret: "caret 1.06s steps(1, end) infinite",
       },
     },
   },

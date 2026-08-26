@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.services import finance_svc, uazapi_svc, report_pdf_svc
+from app.currency import format_money, normalize_currency
 
 _MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
           "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
@@ -77,13 +78,15 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
     today = datetime.now(tz).date()
 
     d0, d1, label = _resolve_period(periodo, data_inicio, data_fim, today)
+    currency = normalize_currency(profile.get("currency"))
 
-    resumo = finance_svc.summary(uid, d0, d1)
-    por_categoria = finance_svc.spending_by_category(uid, d0, d1)
+    resumo = finance_svc.summary(uid, d0, d1, currency)
+    por_categoria = finance_svc.spending_by_category(uid, d0, d1, currency)
     limites = finance_svc.limit_status(uid)
 
     base = {
         "ok": True,
+        "moeda": currency,
         "periodo": {"inicio": d0, "fim": d1, "label": label},
         "receitas": resumo["total_income"],
         "gastos": resumo["total_expense"],
@@ -102,7 +105,8 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
         return {**base, "formato": "pdf", "enviado": False, "erro": "sem_telefone",
                 "instrucao": "Não foi possível enviar o PDF. Ofereça o resumo em texto."}
 
-    transacoes = finance_svc.list_transactions(uid, date_from=d0, date_to=d1, limit=10000)
+    transacoes = finance_svc.list_transactions(uid, date_from=d0, date_to=d1,
+                                               limit=10000, currency=currency)
     pdf_bytes = report_pdf_svc.build_financial_report_pdf(
         user_name=profile.get("name") or "",
         period_label=label,
@@ -111,14 +115,15 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
         transactions=transacoes,
         limits=limites,
         generated_at=datetime.now(tz),
+        currency=currency,
     )
     doc_name = f"Relatório ZapWallet - {_safe_filename(label)}.pdf"
     caption = (
         f"📊 Relatório de {label}\n"
-        f"Receitas: {resumo['total_income']:.2f} €\n"
-        f"Gastos: {resumo['total_expense']:.2f} €\n"
-        f"Saldo: {resumo['balance']:.2f} €"
-    ).replace(".", ",")
+        f"Receitas: {format_money(resumo['total_income'], currency)}\n"
+        f"Gastos: {format_money(resumo['total_expense'], currency)}\n"
+        f"Saldo: {format_money(resumo['balance'], currency)}"
+    )
 
     enviado = uazapi_svc.send_media(
         numero, uazapi_svc.pdf_data_uri(pdf_bytes), "document",

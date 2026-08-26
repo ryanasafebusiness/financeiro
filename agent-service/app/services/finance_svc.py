@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from dateutil import parser as dateparser
 
 from app.services.supabase_svc import get_db
+from app.currency import normalize_currency
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +78,8 @@ def week_bounds(ref: date | None = None) -> tuple[str, str]:
 def create_transaction(user_id: str, type_: str, amount: float, category: str = "",
                         description: str = "", occurred_on: str | None = None,
                         source: str = "whatsapp", *, title: str = "", location: str = "",
-                        occurred_at: str | None = None, recurring_id: str | None = None) -> dict:
+                        occurred_at: str | None = None, recurring_id: str | None = None,
+                        currency: str = "EUR") -> dict:
     # Resolve data/hora: occurred_at (ISO completo) tem prioridade; senão a data
     # (meio-dia); senão agora.
     if occurred_at:
@@ -94,6 +96,7 @@ def create_transaction(user_id: str, type_: str, amount: float, category: str = 
         "user_id": user_id,
         "type": type_,
         "amount": round(float(amount), 2),
+        "currency": normalize_currency(currency),
         "title": norm_title(title) or norm_title(category) or "Transação",
         "category": category or None,
         "description": description or None,
@@ -109,12 +112,14 @@ def create_transaction(user_id: str, type_: str, amount: float, category: str = 
 
 def list_transactions(user_id: str, type_: str | None = None, category: str | None = None,
                       date_from: str | None = None, date_to: str | None = None,
-                      limit: int = 50) -> list[dict]:
+                      limit: int = 50, currency: str | None = None) -> list[dict]:
     q = get_db().table("transactions").select("*").eq("user_id", user_id)
     if type_:
         q = q.eq("type", type_)
     if category:
         q = q.ilike("category", category)
+    if currency:
+        q = q.eq("currency", normalize_currency(currency))
     if date_from:
         q = q.gte("occurred_on", date_from)
     if date_to:
@@ -126,11 +131,13 @@ def list_transactions(user_id: str, type_: str | None = None, category: str | No
 def update_transaction(user_id: str, tx_id: str, fields: dict) -> dict | None:
     clean = {k: v for k, v in fields.items()
              if k in ("type", "amount", "title", "category", "description",
-                      "location", "occurred_on", "occurred_at") and v is not None}
+                      "location", "occurred_on", "occurred_at", "currency") and v is not None}
     if "amount" in clean:
         clean["amount"] = round(float(clean["amount"]), 2)
     if "title" in clean:
         clean["title"] = norm_title(clean["title"])
+    if "currency" in clean:
+        clean["currency"] = normalize_currency(clean["currency"])
     if "occurred_at" in clean:
         clean["occurred_on"] = str(clean["occurred_at"])[:10]
     elif "occurred_on" in clean:
@@ -223,8 +230,9 @@ def delete_limit(user_id: str, category: str, period: str = "monthly") -> bool:
 
 
 # ── agregações ─────────────────────────────────────────────────────────────────
-def summary(user_id: str, date_from: str, date_to: str) -> dict:
-    rows = list_transactions(user_id, date_from=date_from, date_to=date_to, limit=10000)
+def summary(user_id: str, date_from: str, date_to: str, currency: str = "EUR") -> dict:
+    currency = normalize_currency(currency)
+    rows = list_transactions(user_id, date_from=date_from, date_to=date_to, limit=10000, currency=currency)
     income = sum(float(r["amount"]) for r in rows if r["type"] == "income")
     expense = sum(float(r["amount"]) for r in rows if r["type"] == "expense")
     return {
@@ -232,12 +240,13 @@ def summary(user_id: str, date_from: str, date_to: str) -> dict:
         "total_income": round(income, 2),
         "total_expense": round(expense, 2),
         "balance": round(income - expense, 2),
-        "count": len(rows),
+        "count": len(rows), "currency": currency,
     }
 
 
-def spending_by_category(user_id: str, date_from: str, date_to: str) -> list[dict]:
-    rows = list_transactions(user_id, type_="expense", date_from=date_from, date_to=date_to, limit=10000)
+def spending_by_category(user_id: str, date_from: str, date_to: str, currency: str = "EUR") -> list[dict]:
+    rows = list_transactions(user_id, type_="expense", date_from=date_from, date_to=date_to,
+                             limit=10000, currency=currency)
     agg: dict[str, float] = {}
     for r in rows:
         cat = (r.get("category") or "Outros")
@@ -326,7 +335,7 @@ def _advance(frequency: str, d: date, day_of_month=None, day_of_week=None, month
 def create_recurring(user_id: str, type_: str, title: str, amount: float, category: str = "",
                      description: str = "", location: str = "", frequency: str = "monthly",
                      day_of_month=None, day_of_week=None, month_of_year=None,
-                     tz_today: date | None = None) -> dict:
+                     tz_today: date | None = None, currency: str = "EUR") -> dict:
     today = tz_today or date.today()
     nxt = next_occurrence(frequency, today, day_of_month, day_of_week, month_of_year)
     row = {
@@ -334,6 +343,7 @@ def create_recurring(user_id: str, type_: str, title: str, amount: float, catego
         "type": type_,
         "title": norm_title(title) or norm_title(category) or "Recorrência",
         "amount": round(float(amount), 2),
+        "currency": normalize_currency(currency),
         "category": category or None,
         "description": description or None,
         "location": location or None,
@@ -358,12 +368,14 @@ def list_recurring(user_id: str, active: bool | None = True) -> list[dict]:
 def update_recurring(user_id: str, rec_id: str, fields: dict) -> dict | None:
     clean = {k: v for k, v in fields.items()
              if k in ("type", "title", "amount", "category", "description", "location",
-                      "frequency", "day_of_month", "day_of_week", "month_of_year", "active")
+                      "frequency", "day_of_month", "day_of_week", "month_of_year", "active", "currency")
              and v is not None}
     if "amount" in clean:
         clean["amount"] = round(float(clean["amount"]), 2)
     if "title" in clean:
         clean["title"] = norm_title(clean["title"])
+    if "currency" in clean:
+        clean["currency"] = normalize_currency(clean["currency"])
     # Recalcula a próxima ocorrência se a regra mudou
     if any(k in clean for k in ("frequency", "day_of_month", "day_of_week", "month_of_year")):
         cur = (get_db().table("recurring_transactions").select("*")
@@ -400,6 +412,7 @@ def materialize_due(today: date | None = None) -> int:
             title=r.get("title"), category=r.get("category") or "",
             description=r.get("description") or "", location=r.get("location") or "",
             occurred_at=f"{run_date}T09:00:00", source="recurring", recurring_id=r["id"],
+            currency=r.get("currency") or "EUR",
         )
         nxt = _advance(r["frequency"], date.fromisoformat(run_date),
                        r.get("day_of_month"), r.get("day_of_week"), r.get("month_of_year"))

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight, AlertTriangle, BarChart3, CreditCard, Gauge, LayoutDashboard,
   Repeat, Settings, Tags, Target, X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CURRENCY_STORAGE_KEY, cn, type CurrencyCode } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, isPremiumActive } from "@/hooks/useProfile";
 import type { Profile } from "@/integrations/supabase/types";
@@ -44,6 +47,7 @@ export default function AppLayout() {
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -54,6 +58,22 @@ export default function AppLayout() {
   useEffect(() => {
     localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
   }, [collapsed]);
+
+  useEffect(() => {
+    if (profile?.currency) localStorage.setItem(CURRENCY_STORAGE_KEY, profile.currency);
+  }, [profile?.currency]);
+
+  const handleCurrencyChange = useCallback(async (currency: CurrencyCode) => {
+    if (!profile || profile.currency === currency) return;
+    const { error } = await supabase.from("profiles").update({ currency }).eq("id", profile.id);
+    if (error) {
+      toast.error("Não foi possível trocar a moeda.");
+      return;
+    }
+    localStorage.setItem(CURRENCY_STORAGE_KEY, currency);
+    await queryClient.invalidateQueries();
+    window.location.reload();
+  }, [profile, queryClient]);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -225,6 +245,7 @@ export default function AppLayout() {
           onOpenMenu={() => setDrawerOpen(true)}
           onOpenCommand={openCommand}
           onSignOut={handleSignOut}
+          onCurrencyChange={handleCurrencyChange}
         />
 
         {banner && (

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Wallet, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { OtpInput, type OtpInputHandle, type OtpStatus } from "@/components/ui/otp-input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +20,8 @@ export default function Login() {
   const [phone, setPhone] = useState<string>("");
   const [code, setCode] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
+  const otpRef = useRef<OtpInputHandle>(null);
 
   useEffect(() => {
     if (user) {
@@ -45,23 +48,32 @@ export default function Login() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Verifica o código. `e` é opcional porque o OtpInput dispara sozinho ao
+   * completar os 6 dígitos — o botão vira confirmação, não obrigação.
+   */
+  const handleVerifyOtp = async (e?: React.FormEvent, value?: string) => {
+    e?.preventDefault();
     const onlyDigits = phone.replace(/\D/g, "");
-    if (code.length !== 6) {
+    const codigo = value ?? code;
+    if (codigo.length !== 6) {
       toast.error("O código deve ter 6 dígitos.");
       return;
     }
     setLoading(true);
+    setOtpStatus("idle");
     try {
-      const r = await api.verifyOtp(onlyDigits, code);
+      const r = await api.verifyOtp(onlyDigits, codigo);
       const { error } = await loginWithOtp(r.email, r.token);
       if (error) {
+        setOtpStatus("error");
         toast.error(error.message ?? "Não foi possível entrar. Tente novamente.");
         return;
       }
+      setOtpStatus("success");
       navigate("/dashboard");
     } catch (err) {
+      setOtpStatus("error");
       toast.error((err as Error).message);
     } finally {
       setLoading(false);
@@ -73,6 +85,9 @@ export default function Login() {
     setLoading(true);
     try {
       await api.requestOtp(onlyDigits);
+      setCode("");
+      setOtpStatus("idle");
+      otpRef.current?.clear();
       toast.success("Novo código enviado!");
     } catch (err) {
       toast.error((err as Error).message);
@@ -84,6 +99,8 @@ export default function Login() {
   const handleBack = () => {
     setStep("phone");
     setCode("");
+    setOtpStatus("idle");
+    otpRef.current?.clear();
   };
 
   return (
@@ -145,20 +162,21 @@ export default function Login() {
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">Código de verificação</Label>
-                  <Input
-                    id="code"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    autoComplete="one-time-code"
-                    placeholder="000000"
-                    className="h-14 text-center text-2xl font-semibold tracking-[0.4em] tabular"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                    disabled={loading}
+                  <Label className="block text-center">Código de verificação</Label>
+                  <OtpInput
+                    ref={otpRef}
                     autoFocus
+                    disabled={loading}
+                    status={otpStatus}
+                    onChange={(v) => {
+                      setCode(v);
+                      if (otpStatus === "error") setOtpStatus("idle");
+                    }}
+                    onComplete={(v) => handleVerifyOtp(undefined, v)}
                   />
+                  <p className="pt-1 text-center text-label text-muted-foreground">
+                    Cole o código ou digite — verificamos sozinho no último dígito.
+                  </p>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={loading}>

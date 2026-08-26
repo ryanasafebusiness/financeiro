@@ -11,25 +11,29 @@ export function cn(...inputs: ClassValue[]) {
    Para trocar de moeda, mexa só aqui.
    ------------------------------------------------------------------ */
 
-export const CURRENCY = {
-  code: "EUR",
-  symbol: "€",
-  /** Locale usado só para agrupar os dígitos (pt-BR = 1.234,56, igual ao padrão europeu). */
-  numberLocale: "pt-BR",
-} as const;
+export type CurrencyCode = "EUR" | "BRL";
+export const CURRENCY_STORAGE_KEY = "zw:currency";
+
+export function preferredCurrency(): CurrencyCode {
+  if (typeof window === "undefined") return "EUR";
+  return localStorage.getItem(CURRENCY_STORAGE_KEY) === "BRL" ? "BRL" : "EUR";
+}
 
 /** Espaço fino inquebrável: o símbolo nunca se separa do número na quebra de linha. */
 const NBSP = "\u00A0";
 
-/** Formata um número como euro: 1234.5 -> "1.234,50 €". */
-export function money(value: number | string | null | undefined): string {
+/** Formata sem converter: EUR -> "1.234,50 €"; BRL -> "R$ 1.234,50". */
+export function money(
+  value: number | string | null | undefined,
+  currency: CurrencyCode = preferredCurrency(),
+): string {
   const parsed = typeof value === "string" ? parseFloat(value) : value ?? 0;
   const n = Number.isFinite(parsed as number) ? (parsed as number) : 0;
-  const digits = n.toLocaleString(CURRENCY.numberLocale, {
+  const digits = n.toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return `${digits}${NBSP}${CURRENCY.symbol}`;
+  return currency === "BRL" ? `R$${NBSP}${digits}` : `${digits}${NBSP}€`;
 }
 
 /** 'YYYY-MM-DD' -> 'DD/MM/YYYY' (sem fuso). */

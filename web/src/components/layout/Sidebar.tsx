@@ -1,8 +1,45 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { LogOut, PanelLeftClose, PanelLeftOpen, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/ui/tooltip";
 import { userNav, adminNav, type NavItem } from "./nav-items";
+
+/**
+ * Indicador que DESLIZA entre os itens em vez de piscar em cada um.
+ *
+ * A ideia vem do "Animated Sidebar" do 21st.dev (@unlumen), que usa o layoutId
+ * do framer-motion. Sem essa lib, medimos o item ativo e movemos uma única
+ * barra por transform — mesmo efeito, custo zero de dependência.
+ */
+function useActiveIndicator(collapsed: boolean) {
+  const navRef = useRef<HTMLElement>(null);
+  const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const measure = () => {
+      const nav = navRef.current;
+      // O NavLink ativo já se marca sozinho com aria-current="page".
+      const active = nav?.querySelector<HTMLElement>("a[aria-current='page']");
+      if (!nav || !active) return setBar(null);
+      // Por rect, e não offsetTop: quando recolhida, o link fica dentro do
+      // wrapper posicionado do Tooltip, que viraria o offsetParent.
+      const navBox = nav.getBoundingClientRect();
+      const box = active.getBoundingClientRect();
+      setBar({ top: box.top - navBox.top + nav.scrollTop, height: box.height });
+    };
+    // rAF: espera o layout assentar depois de trocar de rota ou recolher.
+    const id = requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", measure);
+    };
+  }, [pathname, collapsed]);
+
+  return { navRef, bar };
+}
 
 /**
  * Sidebar minimalista (referência: apps premium de macOS).
@@ -23,6 +60,8 @@ export function Sidebar({
   onSignOut: () => void;
   showCollapseButton?: boolean;
 }) {
+  const { navRef, bar } = useActiveIndicator(collapsed);
+
   const item = (n: NavItem) => (
     <Tooltip key={n.to} content={collapsed ? n.label : null} side="right" className="w-full">
       <NavLink
@@ -69,7 +108,18 @@ export function Sidebar({
         )}
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden">
+      <nav
+        ref={navRef}
+        className="nav-dim relative flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden"
+      >
+        {/* Barra do item ativo: uma só, deslizando entre os itens. */}
+        {bar && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-0 z-10 w-[3px] rounded-r-pill bg-primary transition-[transform,height] duration-slow ease-out-soft"
+            style={{ transform: `translateY(${bar.top + 8}px)`, height: bar.height - 16 }}
+          />
+        )}
         {userNav.map(item)}
 
         {isAdmin && (

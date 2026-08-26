@@ -1,6 +1,7 @@
 """Tool: editar_transacao — altera um lançamento existente (pelo id)."""
 from app.services import finance_svc
 from app.tools._common import INVALID_AMOUNT, parse_amount
+from app.currency import normalize_currency
 
 DEFINITION = {
     "type": "function",
@@ -16,6 +17,7 @@ DEFINITION = {
                 "id": {"type": "string", "description": "id do lançamento (obtido em consultar_transacoes)."},
                 "tipo": {"type": "string", "enum": ["gasto", "receita"]},
                 "valor": {"type": "number"},
+                "moeda": {"type": "string", "enum": ["EUR", "BRL"]},
                 "titulo": {"type": "string", "description": "Novo título curto e capitalizado."},
                 "categoria": {"type": "string"},
                 "descricao": {"type": "string", "description": "Nova frase curta sobre a transação."},
@@ -30,7 +32,7 @@ DEFINITION = {
 
 def execute(ctx: dict, id: str, tipo: str = "", valor: float | None = None,
             titulo: str = "", categoria: str = "", descricao: str = "",
-            local: str = "", data: str = "") -> dict:
+            local: str = "", data: str = "", moeda: str = "") -> dict:
     fields: dict = {}
     if tipo:
         fields["type"] = "income" if str(tipo).lower().startswith("rec") else "expense"
@@ -39,6 +41,8 @@ def execute(ctx: dict, id: str, tipo: str = "", valor: float | None = None,
         if valor is None:        # tentou editar p/ zero/negativo -> bloqueia
             return INVALID_AMOUNT
         fields["amount"] = valor
+    if moeda:
+        fields["currency"] = normalize_currency(moeda)
     if titulo:
         fields["title"] = titulo
     if categoria:
@@ -61,6 +65,7 @@ def execute(ctx: dict, id: str, tipo: str = "", valor: float | None = None,
             "tipo": "gasto" if updated["type"] == "expense" else "receita",
             "titulo": updated.get("title"),
             "valor": float(updated["amount"]),
+            "moeda": updated.get("currency", "EUR"),
             "categoria": updated.get("category"),
             "descricao": updated.get("description"),
             "local": updated.get("location"),

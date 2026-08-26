@@ -9,6 +9,7 @@ encoding de volta faria o símbolo sumir silenciosamente do relatório.
 from datetime import datetime
 
 from app.datetime_utils import parse_dt
+from app.currency import format_money
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
@@ -59,13 +60,14 @@ def _fmt_dt(tx: dict) -> str:
 
 
 class _ReportPDF(FPDF):
-    def __init__(self, period_label: str, generated_str: str):
+    def __init__(self, period_label: str, generated_str: str, currency: str = "EUR"):
         super().__init__(orientation="P", unit="mm", format="A4")
         # cp1252 (WinAnsi) em vez do latin-1 padrão do fpdf2: é o que permite
         # imprimir o "€" com as fontes core.
         self.core_fonts_encoding = "cp1252"
         self.period_label = period_label
         self.generated_str = generated_str
+        self.currency = currency
         self.set_margins(14, 14, 14)
         self.set_auto_page_break(auto=True, margin=18)
 
@@ -120,7 +122,7 @@ class _ReportPDF(FPDF):
             self.set_xy(x + 6, y + 10)
             self.set_text_color(*color)
             self.set_font("Helvetica", "B", 15)
-            self.cell(box_w - 8, 8, _eur(val))
+            self.cell(box_w - 8, 8, _txt(format_money(val, self.currency)))
             x += box_w + gap
         self.set_y(y + 30)
 
@@ -161,7 +163,7 @@ class _ReportPDF(FPDF):
             pct = (val / total_expense * 100) if total_expense else 0
             self.set_text_color(*DARK)
             self.cell(86, 7, _ellipsize(row.get("category") or "Outros", 42), fill=fill)
-            self.cell(46, 7, _eur(val), align="R", fill=fill)
+            self.cell(46, 7, _txt(format_money(val, self.currency)), align="R", fill=fill)
             self.cell(50, 7, f"{pct:.1f}%", align="R", fill=fill,
                       new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
@@ -184,7 +186,7 @@ class _ReportPDF(FPDF):
             self.cell(74, 6, title, fill=fill)
             self.cell(40, 6, _ellipsize(t.get("category") or "-", 20), fill=fill)
             self.set_text_color(*(GREEN if inc else RED))
-            self.cell(40, 6, ("+ " if inc else "- ") + _eur(abs(float(t.get("amount") or 0))),
+            self.cell(40, 6, ("+ " if inc else "- ") + _txt(format_money(abs(float(t.get("amount") or 0)), self.currency)),
                       align="R", fill=fill, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         extra = len(transactions) - _MAX_TX_ROWS
         if extra > 0:
@@ -214,10 +216,11 @@ class _ReportPDF(FPDF):
 
 def build_financial_report_pdf(*, user_name: str, period_label: str, summary: dict,
                                by_category, transactions, limits=None,
-                               generated_at: datetime | None = None) -> bytes:
+                               generated_at: datetime | None = None,
+                               currency: str = "EUR") -> bytes:
     """Monta o PDF do relatório e devolve os bytes."""
     generated_at = generated_at or datetime.now()
-    pdf = _ReportPDF(_txt(period_label) or "Período", generated_at.strftime("%d/%m/%Y %H:%M"))
+    pdf = _ReportPDF(_txt(period_label) or "Período", generated_at.strftime("%d/%m/%Y %H:%M"), currency)
     pdf.add_page()
 
     pdf.set_text_color(*GRAY)

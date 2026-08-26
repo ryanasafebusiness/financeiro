@@ -27,7 +27,7 @@ import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 
 type MeResponse = {
-  profile: { name: string | null; plan: string | null; is_premium: boolean };
+  profile: { name: string | null; plan: string | null; is_premium: boolean; currency: "EUR" | "BRL" };
   mes_atual: {
     total_income: number;
     total_expense: number;
@@ -51,12 +51,13 @@ export default function Dashboard() {
   });
 
   const { data: transactions, isLoading: txLoading } = useQuery({
-    queryKey: ["dashboard-transactions", user?.id],
-    enabled: !!user,
+    queryKey: ["dashboard-transactions", user?.id, me?.profile.currency],
+    enabled: !!user && !!me?.profile.currency,
     queryFn: async (): Promise<Transaction[]> => {
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
+        .eq("currency", me!.profile.currency)
         .order("occurred_on", { ascending: false })
         .limit(8);
       if (error) throw error;
@@ -76,7 +77,7 @@ export default function Dashboard() {
     dayOfMonth,
     goals,
     goalsLoading,
-  } = useDashboardData(range);
+  } = useDashboardData(range, me?.profile.currency ?? "EUR");
 
   const income = Number(me?.mes_atual.total_income ?? 0);
   const expense = Number(me?.mes_atual.total_expense ?? 0);

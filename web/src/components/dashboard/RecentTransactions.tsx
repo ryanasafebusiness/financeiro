@@ -105,7 +105,7 @@ export function RecentTransactions({
                         isIncome ? "text-positive" : "text-foreground"
                       )}
                     >
-                      {isIncome ? "+" : "−"} {money(Math.abs(Number(tx.amount)))}
+                      {isIncome ? "+" : "−"} {money(Math.abs(Number(tx.amount)), tx.currency)}
                     </span>
                   </div>
                 </li>

@@ -6,6 +6,7 @@
 // supabase-js para inferir Row/Insert/Update (senão tudo vira `never`).
 
 export type TxType = "expense" | "income";
+export type CurrencyCode = "EUR" | "BRL";
 
 export type Profile = {
   id: string;
@@ -19,6 +20,7 @@ export type Profile = {
   messages_this_month: number;
   message_limit: number;
   timezone: string;
+  currency: CurrencyCode;
   created_at: string;
   updated_at: string;
 };
@@ -28,6 +30,7 @@ export type Transaction = {
   user_id: string;
   type: TxType;
   amount: number;
+  currency: CurrencyCode;
   title: string | null;
   category: string | null;
   description: string | null;
@@ -49,6 +52,7 @@ export type RecurringTransaction = {
   title: string;
   description: string | null;
   amount: number;
+  currency: CurrencyCode;
   category: string | null;
   location: string | null;
   frequency: Frequency;
@@ -102,6 +106,7 @@ export type Plan = {
   duration_days: number;
   message_limit: number;
   stripe_price_id: string | null;
+  stripe_price_id_onetime: string | null;
   active: boolean;
   created_at: string;
 };

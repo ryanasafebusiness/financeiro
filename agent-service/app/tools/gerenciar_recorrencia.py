@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from app.services import finance_svc
 from app.tools._common import INVALID_AMOUNT, parse_amount
+from app.currency import normalize_currency
 
 _FREQ = {
     "mensal": "monthly", "mês": "monthly", "mes": "monthly", "monthly": "monthly",
@@ -35,6 +36,7 @@ DEFINITION = {
                 "tipo": {"type": "string", "enum": ["gasto", "receita"]},
                 "titulo": {"type": "string", "description": "Título capitalizado, ex: 'Salário', 'Aluguel'."},
                 "valor": {"type": "number"},
+                "moeda": {"type": "string", "enum": ["EUR", "BRL"]},
                 "categoria": {"type": "string"},
                 "descricao": {"type": "string", "description": "Frase curta opcional."},
                 "local": {"type": "string", "description": "Local/origem opcional."},
@@ -57,6 +59,7 @@ def _fmt(r: dict) -> dict:
         "tipo": "gasto" if r["type"] == "expense" else "receita",
         "titulo": r.get("title"),
         "valor": float(r["amount"]),
+        "moeda": r.get("currency", "EUR"),
         "categoria": r.get("category"),
         "frequencia": _FREQ_PT.get(r.get("frequency"), r.get("frequency")),
         "dia_do_mes": r.get("day_of_month"),
@@ -68,7 +71,7 @@ def _fmt(r: dict) -> dict:
 def execute(ctx: dict, acao: str, id: str = "", tipo: str = "", titulo: str = "",
             valor: float | None = None, categoria: str = "", descricao: str = "", local: str = "",
             frequencia: str = "mensal", dia_do_mes=None, dia_da_semana=None, mes_do_ano=None,
-            ativo=None) -> dict:
+            ativo=None, moeda: str = "") -> dict:
     uid = ctx["user_id"]
     acao = (acao or "listar").lower()
 
@@ -87,6 +90,7 @@ def execute(ctx: dict, acao: str, id: str = "", tipo: str = "", titulo: str = ""
             uid, type_, titulo, valor, category=categoria, description=descricao, location=local,
             frequency=freq, day_of_month=dia_do_mes, day_of_week=dia_da_semana,
             month_of_year=mes_do_ano, tz_today=today,
+            currency=normalize_currency(moeda, (ctx.get("profile") or {}).get("currency") or "EUR"),
         )
         return {"ok": True, "recorrencia": _fmt(r)}
 
@@ -111,6 +115,8 @@ def execute(ctx: dict, acao: str, id: str = "", tipo: str = "", titulo: str = ""
             if valor is None:    # tentou zerar o valor -> bloqueia
                 return INVALID_AMOUNT
             fields["amount"] = valor
+        if moeda:
+            fields["currency"] = normalize_currency(moeda)
         if categoria:
             fields["category"] = categoria
         if descricao:

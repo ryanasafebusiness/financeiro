@@ -243,6 +243,11 @@ def stripe_health(_admin: dict = Depends(require_admin)):
         p["name"] for p in active_plans
         if not str(p.get("stripe_price_id") or "").startswith("price_")
     ]
+    # O avulso é opcional (só destrava MB WAY/Multibanco), então não reprova o ok.
+    missing_onetime = [
+        p["name"] for p in active_plans
+        if not str(p.get("stripe_price_id_onetime") or "").startswith("price_")
+    ]
     secret_key = settings_svc.get_stripe_secret_key()
     base_url = settings_svc.get_app_base_url()
     ok = (
@@ -259,6 +264,7 @@ def stripe_health(_admin: dict = Depends(require_admin)):
         "app_base_url": base_url,
         "plans_active": len(active_plans),
         "plans_missing_price": missing_price,
+        "plans_missing_onetime": missing_onetime,
         "trial_days": settings_svc.get_trial_days(),
         "trial_message_limit": settings_svc.get_trial_message_limit(),
         "ok": ok,
@@ -277,6 +283,7 @@ class PlanBody(BaseModel):
     duration_days: int
     message_limit: int = 0
     stripe_price_id: str = ""
+    stripe_price_id_onetime: str = ""
     active: bool = True
 
 
@@ -298,6 +305,7 @@ class PlanPatch(BaseModel):
     duration_days: Optional[int] = None
     message_limit: Optional[int] = None
     stripe_price_id: Optional[str] = None
+    stripe_price_id_onetime: Optional[str] = None
     active: Optional[bool] = None
 
 

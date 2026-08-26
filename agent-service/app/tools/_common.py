@@ -1,14 +1,14 @@
 """Helpers compartilhados pelas tools (não é uma tool — prefixo _, sem DEFINITION)."""
 
 # Resultado padrão quando o valor não veio (ou veio zero/negativo). Faz o agente
-# PEDIR o valor em vez de criar um lançamento de 0,00 €.
+# PEDIR o valor em vez de criar um lançamento de valor zero.
 INVALID_AMOUNT = {
     "ok": False,
     "erro": "valor_obrigatorio",
     "instrucao": (
         "NÃO registre/crie nada agora: o valor não foi informado (ou veio como zero). "
-        "Pergunte ao usuário, de forma curta, qual é o valor exato em euros e só então "
-        "chame a ferramenta. Nunca invente nem assuma 0,00 €."
+        "Pergunte ao usuário, de forma curta, qual é o valor exato e, se necessário, a moeda; "
+        "só então chame a ferramenta. Nunca invente nem assuma valor zero."
     ),
 }
 

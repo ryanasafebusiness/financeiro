@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Transaction } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 type Periodo = "atual" | "passado" | "tres" | "ano";
 
@@ -103,6 +104,8 @@ interface ResumoCard {
 
 export default function Relatorios() {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
+  const currency = profile?.currency ?? "EUR";
   // Permite chegar aqui já no período escolhido no header do dashboard.
   const [searchParams] = useSearchParams();
   const periodoInicial = (["atual", "passado", "tres", "ano"] as Periodo[]).includes(
@@ -115,14 +118,15 @@ export default function Relatorios() {
   const { from, to } = useMemo(() => calcularPeriodo(periodo), [periodo]);
 
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["transactions-relatorios", user?.id, from, to],
-    enabled: !!user,
+    queryKey: ["transactions-relatorios", user?.id, from, to, currency],
+    enabled: !!user && !!profile,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
         .gte("occurred_on", from)
         .lte("occurred_on", to)
+        .eq("currency", currency)
         .order("occurred_on", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Transaction[];
