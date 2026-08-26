@@ -4,6 +4,9 @@ import { LogOut, PanelLeftClose, PanelLeftOpen, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip } from "@/components/ui/tooltip";
 import { userNav, adminNav, type NavItem } from "./nav-items";
+import { ThemeSelector } from "@/components/mobile/ThemeSelector";
+import type { Profile } from "@/integrations/supabase/types";
+import type { CurrencyCode } from "@/lib/utils";
 
 /**
  * Indicador que DESLIZA entre os itens em vez de piscar em cada um.
@@ -51,6 +54,8 @@ export function Sidebar({
   onNavigate,
   onSignOut,
   showCollapseButton = true,
+  profile,
+  onCurrencyChange,
 }: {
   collapsed: boolean;
   onToggleCollapsed?: () => void;
@@ -58,6 +63,8 @@ export function Sidebar({
   onNavigate?: () => void;
   onSignOut: () => void;
   showCollapseButton?: boolean;
+  profile?: Profile | null;
+  onCurrencyChange?: (currency: CurrencyCode) => void | Promise<void>;
 }) {
   const { navRef, bar } = useActiveIndicator(collapsed);
 
@@ -135,6 +142,30 @@ export function Sidebar({
       </nav>
 
       <div className={cn("mt-2 space-y-0.5 border-t border-border pt-3", collapsed && "flex flex-col items-center")}>
+        {!collapsed && (
+          <div className="mb-2 px-1">
+            <ThemeSelector />
+          </div>
+        )}
+
+        {profile && onCurrencyChange && (
+          <Tooltip content={collapsed ? "Trocar moeda" : null} side="right" className="w-full">
+            <button
+              type="button"
+              onClick={() => {
+                if (onCurrencyChange) onCurrencyChange(profile.currency === "BRL" ? "EUR" : "BRL");
+              }}
+              className={cn(
+                "flex w-full items-center rounded-lg text-body font-medium text-muted-foreground",
+                "transition-colors duration-200 hover:bg-muted hover:text-foreground mb-1",
+                collapsed ? "h-10 w-10 justify-center" : "h-10 gap-3 px-3"
+              )}
+            >
+              <Wallet className="h-[1.05rem] w-[1.05rem]" />
+              {!collapsed && <span>Moeda: {profile.currency === "BRL" ? "Real (R$)" : "Euro (€)"}</span>}
+            </button>
+          </Tooltip>
+        )}
         {showCollapseButton && onToggleCollapsed && (
           <Tooltip content={collapsed ? "Expandir" : null} side="right" className="w-full">
             <button

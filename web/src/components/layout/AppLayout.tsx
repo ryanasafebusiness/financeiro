@@ -206,6 +206,8 @@ export default function AppLayout() {
           onToggleCollapsed={() => setCollapsed((v) => !v)}
           isAdmin={profile?.is_admin}
           onSignOut={handleSignOut}
+          profile={profile}
+          onCurrencyChange={handleCurrencyChange}
         />
       </aside>
 
@@ -230,6 +232,8 @@ export default function AppLayout() {
               onNavigate={() => setDrawerOpen(false)}
               onSignOut={handleSignOut}
               showCollapseButton={false}
+              profile={profile}
+              onCurrencyChange={handleCurrencyChange}
             />
           </aside>
         </div>
