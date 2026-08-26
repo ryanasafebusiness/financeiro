@@ -272,14 +272,14 @@ export default function Relatorios() {
                 <BarChart data={dadosPorMes} barGap={6}>
                   <CartesianGrid
                     vertical={false}
-                    stroke="hsl(var(--border))"
+                    stroke="var(--border)"
                     strokeDasharray="3 6"
                   />
                   <XAxis
                     dataKey="mes"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                     dy={8}
                   />
                   <YAxis
@@ -289,16 +289,16 @@ export default function Relatorios() {
                     tickFormatter={(v: number) =>
                       v >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v))
                     }
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                   />
                   <Tooltip
-                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
+                    cursor={{ fill: "var(--muted)", opacity: 0.5 }}
                     formatter={(value: number) => money(Number(value))}
                     contentStyle={{
                       borderRadius: 12,
                       fontSize: 13,
-                      border: "1px solid hsl(var(--border))",
-                      background: "hsl(var(--popover))",
+                      border: "1px solid var(--border)",
+                      background: "var(--popover)",
                       boxShadow: "var(--shadow-md)",
                     }}
                   />
@@ -307,8 +307,8 @@ export default function Relatorios() {
                     iconSize={8}
                     wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
                   />
-                  <Bar dataKey="Receitas" fill="hsl(var(--positive))" radius={[6, 6, 0, 0]} maxBarSize={38} />
-                  <Bar dataKey="Gastos" fill="hsl(var(--negative))" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="Receitas" fill="var(--positive)" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="Gastos" fill="var(--negative)" radius={[6, 6, 0, 0]} maxBarSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -386,8 +386,8 @@ function GastosPorCategoria({
             contentStyle={{
               borderRadius: 12,
               fontSize: 13,
-              border: "1px solid hsl(var(--border))",
-              background: "hsl(var(--popover))",
+              border: "1px solid var(--border)",
+              background: "var(--popover)",
               boxShadow: "var(--shadow-md)",
             }}
           />

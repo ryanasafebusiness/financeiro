@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  */
 export function Sparkline({
   data,
-  stroke = "hsl(var(--primary))",
+  stroke = "var(--primary)",
   className,
   height = 44,
   strokeWidth = 1.75,

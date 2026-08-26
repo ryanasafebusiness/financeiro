@@ -38,10 +38,10 @@ export function MetricCard({
 
   const stroke =
     tone === "positive"
-      ? "hsl(var(--positive))"
+      ? "var(--positive)"
       : tone === "negative"
-        ? "hsl(var(--negative))"
-        : "hsl(var(--primary))";
+        ? "var(--negative)"
+        : "var(--primary)";
 
   const deltaGood = delta === null ? null : higherIsBetter ? delta >= 0 : delta <= 0;
   const DeltaIcon = delta === null ? Minus : delta >= 0 ? ArrowUpRight : ArrowDownRight;

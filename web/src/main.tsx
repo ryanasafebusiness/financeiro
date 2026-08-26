@@ -7,6 +7,11 @@ import App from "./App";
 import { AuthProvider } from "./hooks/useAuth";
 import "./index.css";
 
+// O tema Vercel referenciado é apresentado em dark mode; mantemos essa
+// aparência desde o primeiro paint, sem o clarão do tema claro.
+document.documentElement.classList.add("dark");
+document.documentElement.style.colorScheme = "dark";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -42,8 +42,7 @@ function useActiveIndicator(collapsed: boolean) {
 }
 
 /**
- * Sidebar minimalista (referência: apps premium de macOS).
- * Item ativo = fundo verde muito claro + ícone verde + texto escuro.
+ * Sidebar minimalista com contraste monocromático do tema Vercel.
  */
 export function Sidebar({
   collapsed,

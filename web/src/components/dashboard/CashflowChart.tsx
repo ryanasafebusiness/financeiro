@@ -85,17 +85,17 @@ export function CashflowChart({
               <AreaChart data={data} margin={{ top: 8, right: 12, left: 4, bottom: 0 }}>
                 <defs>
                   <linearGradient id="grad-receitas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--positive))" stopOpacity={0.18} />
-                    <stop offset="100%" stopColor="hsl(var(--positive))" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--positive)" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="var(--positive)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="grad-despesas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--negative))" stopOpacity={0.14} />
-                    <stop offset="100%" stopColor="hsl(var(--negative))" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--negative)" stopOpacity={0.14} />
+                    <stop offset="100%" stopColor="var(--negative)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   vertical={false}
-                  stroke="hsl(var(--border))"
+                  stroke="var(--border)"
                   strokeDasharray="3 6"
                   opacity={0.7}
                 />
@@ -104,7 +104,7 @@ export function CashflowChart({
                   tickLine={false}
                   axisLine={false}
                   minTickGap={24}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                   dy={8}
                 />
                 <YAxis
@@ -112,28 +112,28 @@ export function CashflowChart({
                   axisLine={false}
                   width={44}
                   tickFormatter={compact}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                 />
                 <Tooltip
                   content={<ChartTooltip />}
-                  cursor={{ stroke: "hsl(var(--border-strong))", strokeWidth: 1 }}
+                  cursor={{ stroke: "var(--border-strong)", strokeWidth: 1 }}
                 />
                 <Area
                   type="monotone"
                   dataKey="receitas"
-                  stroke="hsl(var(--positive))"
+                  stroke="var(--positive)"
                   strokeWidth={2}
                   fill="url(#grad-receitas)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)" }}
                   animationDuration={700}
                 />
                 <Area
                   type="monotone"
                   dataKey="despesas"
-                  stroke="hsl(var(--negative))"
+                  stroke="var(--negative)"
                   strokeWidth={2}
                   fill="url(#grad-despesas)"
-                  activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)" }}
                   animationDuration={700}
                   animationBegin={120}
                 />

@@ -2,74 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------
-   ZapWallet — Design System
-   Tokens globais. Nenhuma cor deve ser hardcoded nos componentes:
-   sempre usar as classes do Tailwind mapeadas para estes tokens.
-   Cores em triplet HSL para o Tailwind aplicar /alpha (ex.: bg-primary/10).
-   ------------------------------------------------------------------ */
+/* Tema Vercel por Serafim (21st.dev), adaptado aos tokens do ZapWallet. */
 
 @layer base {
   :root {
     /* ── Superfícies ── */
-    --background: 120 7% 97%;          /* #F7F8F7 */
-    --surface: 0 0% 100%;              /* #FFFFFF */
-    --surface-secondary: 150 14% 97%;
-    --card: 0 0% 100%;
-    --card-foreground: 146 17% 8%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 146 17% 8%;
+    --background: oklch(0.99 0 0);
+    --surface: oklch(0.99 0 0);
+    --surface-secondary: oklch(0.97 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0 0 0);
+    --popover: oklch(0.99 0 0);
+    --popover-foreground: oklch(0 0 0);
 
     /* ── Texto ── */
-    --foreground: 146 17% 8%;          /* #111814 */
-    --muted: 150 12% 96%;
-    --muted-foreground: 145 5% 43%;    /* #68746D */
+    --foreground: oklch(0 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.44 0 0);
 
     /* ── Marca ── */
-    --primary: 155 77% 37%;            /* #16A66A */
-    --primary-hover: 156 76% 30%;      /* #128557 */
-    --primary-foreground: 0 0% 100%;
-    --primary-soft: 150 50% 95%;       /* #EAF8F1 */
+    --primary: oklch(0 0 0);
+    --primary-hover: oklch(0.18 0 0);
+    --primary-foreground: oklch(1 0 0);
+    --primary-soft: oklch(0.94 0 0);
 
-    --secondary: 150 14% 96%;
-    --secondary-foreground: 146 17% 14%;
-    --accent: 150 50% 95%;
-    --accent-foreground: 156 76% 26%;
+    --secondary: oklch(0.94 0 0);
+    --secondary-foreground: oklch(0 0 0);
+    --accent: oklch(0.94 0 0);
+    --accent-foreground: oklch(0 0 0);
 
     /* ── Semânticas ── */
-    --positive: 155 72% 33%;
-    --negative: 358 55% 52%;           /* vermelho elegante, pouco saturado */
-    --warning: 33 82% 46%;
-    --info: 214 70% 50%;
-    --destructive: 358 55% 52%;
-    --destructive-foreground: 0 0% 100%;
+    --positive: oklch(0.58 0.16 154);
+    --negative: oklch(0.63 0.19 23.03);
+    --warning: oklch(0.72 0.16 75.35);
+    --info: oklch(0.55 0.22 264.53);
+    --destructive: oklch(0.63 0.19 23.03);
+    --destructive-foreground: oklch(1 0 0);
 
     /* ── Traços ── */
-    --border: 150 6% 91%;              /* ~rgba(17,24,20,.08) sobre branco */
-    --border-strong: 150 7% 85%;
-    --input: 150 6% 89%;
-    --ring: 155 77% 37%;
+    --border: oklch(0.92 0 0);
+    --border-strong: oklch(0.82 0 0);
+    --input: oklch(0.94 0 0);
+    --ring: oklch(0 0 0);
 
     /* ── Dataviz (categorias) ── */
-    --chart-1: 155 66% 40%;
-    --chart-2: 200 72% 47%;
-    --chart-3: 38 88% 55%;
-    --chart-4: 265 58% 62%;
-    --chart-5: 176 62% 40%;
-    --chart-6: 12 78% 62%;
-    --chart-7: 226 62% 62%;
-    --chart-8: 84 52% 45%;
+    --chart-1: oklch(0.81 0.17 75.35);
+    --chart-2: oklch(0.55 0.22 264.53);
+    --chart-3: oklch(0.72 0 0);
+    --chart-4: oklch(0.92 0 0);
+    --chart-5: oklch(0.56 0 0);
+    --chart-6: oklch(0.63 0.19 23.03);
+    --chart-7: oklch(0.64 0.15 290);
+    --chart-8: oklch(0.62 0.14 154);
 
     /* ── Raios ── */
-    --radius: 0.875rem;                /* 14px — base de inputs/botões */
-    --radius-card: 1.25rem;            /* 20px — cards grandes */
+    --radius: 0.5rem;
+    --radius-card: 0.5rem;
     --radius-pill: 999px;
 
     /* ── Sombras (extremamente sutis) ── */
-    --shadow-xs: 0 1px 2px rgba(17, 24, 20, 0.03);
-    --shadow-sm: 0 1px 2px rgba(17, 24, 20, 0.03), 0 4px 14px rgba(17, 24, 20, 0.03);
-    --shadow-md: 0 1px 2px rgba(17, 24, 20, 0.03), 0 6px 24px rgba(17, 24, 20, 0.05);
-    --shadow-lg: 0 2px 4px rgba(17, 24, 20, 0.03), 0 16px 48px -12px rgba(17, 24, 20, 0.14);
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.12);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.18);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.18), 0 8px 24px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.18), 0 18px 48px rgb(0 0 0 / 0.14);
 
     /* ── Movimento ── */
     --duration-fast: 150ms;
@@ -84,53 +79,53 @@
   }
 
   .dark {
-    --background: 155 12% 6%;
-    --surface: 155 10% 9%;
-    --surface-secondary: 155 9% 12%;
-    --card: 155 10% 9%;
-    --card-foreground: 150 10% 94%;
-    --popover: 155 10% 10%;
-    --popover-foreground: 150 10% 94%;
+    --background: oklch(0 0 0);
+    --surface: oklch(0.18 0 0);
+    --surface-secondary: oklch(0.18 0 0);
+    --card: oklch(0.14 0 0);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(0.18 0 0);
+    --popover-foreground: oklch(1 0 0);
 
-    --foreground: 150 10% 94%;
-    --muted: 155 8% 15%;
-    --muted-foreground: 150 6% 62%;
+    --foreground: oklch(1 0 0);
+    --muted: oklch(0.23 0 0);
+    --muted-foreground: oklch(0.72 0 0);
 
-    --primary: 155 62% 45%;
-    --primary-hover: 155 62% 52%;
-    --primary-foreground: 155 30% 6%;
-    --primary-soft: 155 30% 14%;
+    --primary: oklch(1 0 0);
+    --primary-hover: oklch(0.85 0 0);
+    --primary-foreground: oklch(0 0 0);
+    --primary-soft: oklch(0.23 0 0);
 
-    --secondary: 155 8% 15%;
-    --secondary-foreground: 150 10% 94%;
-    --accent: 155 26% 16%;
-    --accent-foreground: 155 55% 72%;
+    --secondary: oklch(0.25 0 0);
+    --secondary-foreground: oklch(1 0 0);
+    --accent: oklch(0.32 0 0);
+    --accent-foreground: oklch(1 0 0);
 
-    --positive: 155 58% 50%;
-    --negative: 358 62% 62%;
-    --warning: 38 78% 56%;
-    --info: 210 72% 62%;
-    --destructive: 358 62% 58%;
-    --destructive-foreground: 0 0% 100%;
+    --positive: oklch(0.72 0.17 154);
+    --negative: oklch(0.69 0.20 23.91);
+    --warning: oklch(0.81 0.17 75.35);
+    --info: oklch(0.58 0.21 260.84);
+    --destructive: oklch(0.69 0.20 23.91);
+    --destructive-foreground: oklch(0 0 0);
 
-    --border: 155 8% 18%;
-    --border-strong: 155 8% 24%;
-    --input: 155 8% 20%;
-    --ring: 155 62% 45%;
+    --border: oklch(0.26 0 0);
+    --border-strong: oklch(0.38 0 0);
+    --input: oklch(0.32 0 0);
+    --ring: oklch(0.72 0 0);
 
-    --chart-1: 155 58% 50%;
-    --chart-2: 200 66% 58%;
-    --chart-3: 38 80% 60%;
-    --chart-4: 265 55% 70%;
-    --chart-5: 176 55% 50%;
-    --chart-6: 12 70% 66%;
-    --chart-7: 226 58% 68%;
-    --chart-8: 84 45% 55%;
+    --chart-1: oklch(0.81 0.17 75.35);
+    --chart-2: oklch(0.58 0.21 260.84);
+    --chart-3: oklch(0.56 0 0);
+    --chart-4: oklch(0.44 0 0);
+    --chart-5: oklch(0.92 0 0);
+    --chart-6: oklch(0.69 0.20 23.91);
+    --chart-7: oklch(0.66 0.16 290);
+    --chart-8: oklch(0.72 0.17 154);
 
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 24px rgba(0, 0, 0, 0.28);
-    --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3), 0 16px 48px -12px rgba(0, 0, 0, 0.55);
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.5), 0 18px 48px rgb(0 0 0 / 0.5);
   }
 
   * {
@@ -143,6 +138,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     text-rendering: optimizeLegibility;
   }
@@ -167,7 +163,7 @@
   }
 
   ::selection {
-    background-color: hsl(var(--primary) / 0.18);
+    background-color: color-mix(in oklch, var(--primary) 18%, transparent);
   }
 
   /* Scrollbar discreta, estilo macOS. */
@@ -176,13 +172,13 @@
     height: 10px;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--foreground) / 0.14);
+    background-color: color-mix(in oklch, var(--foreground) 14%, transparent);
     border: 3px solid transparent;
     background-clip: content-box;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--foreground) / 0.24);
+    background-color: color-mix(in oklch, var(--foreground) 24%, transparent);
   }
   ::-webkit-scrollbar-track {
     background: transparent;

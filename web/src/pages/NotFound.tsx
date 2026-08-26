@@ -7,7 +7,7 @@ export default function NotFound() {
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-5 px-4 text-center">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 [background:radial-gradient(50rem_32rem_at_50%_0%,hsl(var(--primary)/0.08),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(50rem_32rem_at_50%_0%,color-mix(in_oklch,var(--primary)_8%,transparent),transparent_70%)]"
       />
       <div className="relative flex flex-col items-center gap-5 animate-fade-up">
         <span className="flex h-12 w-12 items-center justify-center rounded-card bg-muted text-muted-foreground">

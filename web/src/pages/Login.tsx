@@ -108,7 +108,7 @@ export default function Login() {
       {/* Spotlight sutil ao fundo — profundidade sem ruído. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 [background:radial-gradient(60rem_40rem_at_50%_-10%,hsl(var(--primary)/0.10),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(60rem_40rem_at_50%_-10%,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_70%)]"
       />
       <div
         aria-hidden

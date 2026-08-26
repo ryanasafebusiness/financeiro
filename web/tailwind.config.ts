@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
-/** Todos os valores vêm dos tokens em src/index.css — nada hardcoded aqui. */
-const token = (name: string) => `hsl(var(--${name}) / <alpha-value>)`;
+/** Os tokens guardam cores completas em OKLCH, como no tema Vercel do 21st.dev. */
+const token = (name: string) => `color-mix(in oklch, var(--${name}) calc(<alpha-value> * 100%), transparent)`;
 
 export default {
   darkMode: ["class"],
@@ -38,8 +38,6 @@ export default {
       },
       fontFamily: {
         sans: [
-          "Inter var",
-          "Inter",
           "Geist",
           "-apple-system",
           "BlinkMacSystemFont",
@@ -48,6 +46,7 @@ export default {
           "system-ui",
           "sans-serif",
         ],
+        mono: ["Geist Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       fontSize: {
         // Escala tipográfica do produto (tamanho / line-height / tracking).
