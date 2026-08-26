@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { money, cn } from "@/lib/utils";
 import { categoryIcon } from "@/lib/category-visuals";
-import type { Transaction } from "@/integrations/supabase/types";
+import type { CurrencyCode, Transaction } from "@/integrations/supabase/types";
 
 const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
@@ -26,9 +26,13 @@ function shortDate(occurredOn: string): string {
 export function RecentTransactions({
   transactions,
   isLoading,
+  targetCurrency,
+  convert,
 }: {
   transactions: Transaction[];
   isLoading: boolean;
+  targetCurrency: CurrencyCode;
+  convert: (amount: number, source: CurrencyCode) => number | null;
 }) {
   return (
     <Card>
@@ -76,6 +80,8 @@ export function RecentTransactions({
               const Icon = categoryIcon(tx.category, tx.type);
               const title = tx.title ?? tx.category ?? "Transação";
               const meta = [tx.category, shortDate(tx.occurred_on)].filter(Boolean).join(" · ");
+              const original = Math.abs(Number(tx.amount));
+              const converted = convert(original, tx.currency);
 
               return (
                 <li key={tx.id}>
@@ -105,7 +111,7 @@ export function RecentTransactions({
                         isIncome ? "text-positive" : "text-foreground"
                       )}
                     >
-                      {isIncome ? "+" : "−"} {money(Math.abs(Number(tx.amount)), tx.currency)}
+                      {isIncome ? "+" : "−"} {converted === null ? "Cotação indisponível" : money(converted, targetCurrency)}
                     </span>
                   </div>
                 </li>

@@ -82,7 +82,7 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
 
     resumo = finance_svc.summary(uid, d0, d1, currency)
     por_categoria = finance_svc.spending_by_category(uid, d0, d1, currency)
-    limites = finance_svc.limit_status(uid)
+    limites = finance_svc.limit_status(uid, currency=currency)
 
     base = {
         "ok": True,
@@ -105,8 +105,8 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
         return {**base, "formato": "pdf", "enviado": False, "erro": "sem_telefone",
                 "instrucao": "Não foi possível enviar o PDF. Ofereça o resumo em texto."}
 
-    transacoes = finance_svc.list_transactions(uid, date_from=d0, date_to=d1,
-                                               limit=10000, currency=currency)
+    transacoes = finance_svc.list_transactions(uid, date_from=d0, date_to=d1, limit=10000)
+    transacoes, _ = finance_svc.convert_transactions(transacoes, currency)
     pdf_bytes = report_pdf_svc.build_financial_report_pdf(
         user_name=profile.get("name") or "",
         period_label=label,

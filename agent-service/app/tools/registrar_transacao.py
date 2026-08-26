@@ -65,7 +65,7 @@ def execute(ctx: dict, tipo: str, valor: float, titulo: str = "", categoria: str
         },
     }
     if type_ == "expense":
-        alerts = [l for l in finance_svc.limit_status(ctx["user_id"], categoria)
+        alerts = [l for l in finance_svc.limit_status(ctx["user_id"], categoria, currency)
                   if l["exceeded"] or l["pct"] >= 80]
         if alerts:
             result["alertas_limite"] = alerts

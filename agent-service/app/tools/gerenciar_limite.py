@@ -35,6 +35,7 @@ def execute(ctx: dict, acao: str, categoria: str = "geral", valor: float | None 
     acao = (acao or "status").lower()
     period = _PERIODO.get((periodo or "mensal").lower(), "monthly")
     cat = (categoria or "geral").strip().lower() or "geral"
+    currency = (ctx.get("profile") or {}).get("currency") or "EUR"
 
     if acao == "definir":
         if valor is None:
@@ -57,5 +58,5 @@ def execute(ctx: dict, acao: str, categoria: str = "geral", valor: float | None 
 
     # status — categoria explícita filtra; 'geral' (padrão) mostra todos os limites
     filtro = None if cat == "geral" else cat
-    st = finance_svc.limit_status(uid, filtro)
-    return {"ok": True, "status": st}
+    st = finance_svc.limit_status(uid, filtro, currency)
+    return {"ok": True, "moeda": currency, "status": st}

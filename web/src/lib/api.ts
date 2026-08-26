@@ -67,6 +67,9 @@ export const api = {
   async plans<T = any>(): Promise<T> {
     return handle(await fetch(apiUrl("/api/plans")));
   },
+  async exchangeRates<T = any>(currency: "EUR" | "BRL"): Promise<T> {
+    return handle(await fetch(apiUrl(`/api/exchange-rates?currency=${currency}`)));
+  },
   /**
    * Abre uma Checkout Session da Stripe e devolve a URL hospedada.
    * mode "subscription" renova sozinho; "payment" é a compra única, único

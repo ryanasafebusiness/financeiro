@@ -29,6 +29,7 @@ import type { Transaction } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 
 type Periodo = "atual" | "passado" | "tres" | "ano";
 
@@ -106,6 +107,7 @@ export default function Relatorios() {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const currency = profile?.currency ?? "EUR";
+  const { convert, isLoading: ratesLoading } = useCurrencyConversion(currency);
   // Permite chegar aqui já no período escolhido no header do dashboard.
   const [searchParams] = useSearchParams();
   const periodoInicial = (["atual", "passado", "tres", "ano"] as Periodo[]).includes(
@@ -126,7 +128,6 @@ export default function Relatorios() {
         .select("*")
         .gte("occurred_on", from)
         .lte("occurred_on", to)
-        .eq("currency", currency)
         .order("occurred_on", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Transaction[];
@@ -134,7 +135,8 @@ export default function Relatorios() {
   });
 
   const lista: Transaction[] = transactions ?? [];
-  const vazio = !isLoading && lista.length === 0;
+  const loading = isLoading || ratesLoading;
+  const vazio = !loading && lista.length === 0;
 
   // Totais
   const { totalReceitas, totalGastos, qtdGastos } = useMemo(() => {
@@ -142,7 +144,7 @@ export default function Relatorios() {
     let gastos = 0;
     let qtd = 0;
     for (const t of lista) {
-      const valor = Number(t.amount) || 0;
+      const valor = convert(Number(t.amount) || 0, t.currency) ?? 0;
       if (t.type === "income") {
         receitas += valor;
       } else {
@@ -151,7 +153,7 @@ export default function Relatorios() {
       }
     }
     return { totalReceitas: receitas, totalGastos: gastos, qtdGastos: qtd };
-  }, [lista]);
+  }, [lista, convert]);
 
   const saldo = totalReceitas - totalGastos;
   const ticketMedio = qtdGastos > 0 ? totalGastos / qtdGastos : 0;
@@ -162,7 +164,7 @@ export default function Relatorios() {
     for (const t of lista) {
       const chave = t.occurred_on.slice(0, 7); // YYYY-MM
       const atual = mapa.get(chave) ?? { receitas: 0, gastos: 0 };
-      const valor = Number(t.amount) || 0;
+      const valor = convert(Number(t.amount) || 0, t.currency) ?? 0;
       if (t.type === "income") atual.receitas += valor;
       else atual.gastos += valor;
       mapa.set(chave, atual);
@@ -174,7 +176,7 @@ export default function Relatorios() {
         Receitas: v.receitas,
         Gastos: v.gastos,
       }));
-  }, [lista]);
+  }, [lista, convert]);
 
   // Gastos por categoria
   const dadosPorCategoria = useMemo(() => {
@@ -182,12 +184,12 @@ export default function Relatorios() {
     for (const t of lista) {
       if (t.type !== "expense") continue;
       const cat = t.category && t.category.trim() ? t.category : "Sem categoria";
-      mapa.set(cat, (mapa.get(cat) ?? 0) + (Number(t.amount) || 0));
+      mapa.set(cat, (mapa.get(cat) ?? 0) + (convert(Number(t.amount) || 0, t.currency) ?? 0));
     }
     return Array.from(mapa.entries())
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [lista]);
+  }, [lista, convert]);
 
   const resumos: ResumoCard[] = [
     {
@@ -246,7 +248,7 @@ export default function Relatorios() {
             value={r.bruto}
             icon={r.icone}
             tone={r.tone}
-            loading={isLoading}
+            loading={loading}
             format={r.formato}
           />
         ))}
@@ -261,7 +263,7 @@ export default function Relatorios() {
             description="Comparativo agregado por mês no período."
           />
           <div className="px-3 pb-5 sm:px-4">
-            {isLoading ? (
+            {loading ? (
               <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : vazio || dadosPorMes.length === 0 ? (
               <EstadoVazio mensagem="Nenhuma transação encontrada neste período." />
@@ -321,7 +323,7 @@ export default function Relatorios() {
             description="Distribuição dos gastos no período."
           />
           <div className="px-4 pb-5 sm:px-6">
-            {isLoading ? (
+            {loading ? (
               <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : vazio || dadosPorCategoria.length === 0 ? (
               <EstadoVazio mensagem="Nenhum gasto encontrado neste período." />

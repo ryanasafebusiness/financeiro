@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from dateutil import parser as dateparser
 
 from app.services.supabase_svc import get_db
+from app.services import exchange_svc
 from app.currency import normalize_currency
 
 log = logging.getLogger(__name__)
@@ -153,6 +154,23 @@ def delete_transaction(user_id: str, tx_id: str) -> bool:
     return bool(res.data)
 
 
+def convert_transactions(rows: list[dict], target_currency: str) -> tuple[list[dict], dict | None]:
+    """Cópias dos lançamentos com `amount` convertido e origem preservada."""
+    target = normalize_currency(target_currency)
+    needs_rate = any(normalize_currency(r.get("currency")) != target for r in rows)
+    rates = exchange_svc.rates_for(target) if needs_rate else None
+    converted = []
+    for row in rows:
+        source = normalize_currency(row.get("currency"))
+        item = dict(row)
+        item["original_amount"] = float(row.get("amount") or 0)
+        item["original_currency"] = source
+        item["amount"] = exchange_svc.convert(row.get("amount"), source, target, rates)
+        item["currency"] = target
+        converted.append(item)
+    return converted, rates
+
+
 # ── categorias ───────────────────────────────────────────────────────────────────
 def list_categories(user_id: str, type_: str | None = None) -> list[dict]:
     """Categorias do próprio usuário (nome, tipo, emoji, descrição).
@@ -232,7 +250,8 @@ def delete_limit(user_id: str, category: str, period: str = "monthly") -> bool:
 # ── agregações ─────────────────────────────────────────────────────────────────
 def summary(user_id: str, date_from: str, date_to: str, currency: str = "EUR") -> dict:
     currency = normalize_currency(currency)
-    rows = list_transactions(user_id, date_from=date_from, date_to=date_to, limit=10000, currency=currency)
+    original = list_transactions(user_id, date_from=date_from, date_to=date_to, limit=10000)
+    rows, rates = convert_transactions(original, currency)
     income = sum(float(r["amount"]) for r in rows if r["type"] == "income")
     expense = sum(float(r["amount"]) for r in rows if r["type"] == "expense")
     return {
@@ -241,12 +260,14 @@ def summary(user_id: str, date_from: str, date_to: str, currency: str = "EUR") -
         "total_expense": round(expense, 2),
         "balance": round(income - expense, 2),
         "count": len(rows), "currency": currency,
+        "exchange_rate_date": rates.get("date") if rates else None,
     }
 
 
 def spending_by_category(user_id: str, date_from: str, date_to: str, currency: str = "EUR") -> list[dict]:
-    rows = list_transactions(user_id, type_="expense", date_from=date_from, date_to=date_to,
-                             limit=10000, currency=currency)
+    original = list_transactions(user_id, type_="expense", date_from=date_from, date_to=date_to,
+                                 limit=10000)
+    rows, _ = convert_transactions(original, currency)
     agg: dict[str, float] = {}
     for r in rows:
         cat = (r.get("category") or "Outros")
@@ -256,7 +277,7 @@ def spending_by_category(user_id: str, date_from: str, date_to: str, currency: s
     return out
 
 
-def limit_status(user_id: str, category: str | None = None) -> list[dict]:
+def limit_status(user_id: str, category: str | None = None, currency: str = "EUR") -> list[dict]:
     """Para cada limite (ou só o da categoria informada), calcula quanto já foi
     gasto no período e quanto resta. Útil p/ avisar o usuário ao registrar gasto."""
     limits = list_limits(user_id)
@@ -270,10 +291,11 @@ def limit_status(user_id: str, category: str | None = None) -> list[dict]:
         else:
             d0, d1 = month_bounds()
         if cat == "geral":
-            spent = summary(user_id, d0, d1)["total_expense"]
+            spent = summary(user_id, d0, d1, currency)["total_expense"]
         else:
             rows = list_transactions(user_id, type_="expense", category=cat,
                                      date_from=d0, date_to=d1, limit=10000)
+            rows, _ = convert_transactions(rows, currency)
             spent = sum(float(r["amount"]) for r in rows)
         cap = float(lim["limit_amount"])
         out.append({

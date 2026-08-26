@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.api.auth import require_user
 from app.api.otp import router as otp_router
 from app.config import settings
-from app.services import finance_svc, stripe_svc, supabase_svc, settings_svc
+from app.services import exchange_svc, finance_svc, stripe_svc, supabase_svc, settings_svc
 
 log = logging.getLogger(__name__)
 router = APIRouter()
@@ -24,6 +24,12 @@ def me(profile: dict = Depends(require_user)):
     today = datetime.now(tz).date()
     d0, d1 = finance_svc.month_bounds(today)
     currency = profile.get("currency") or "EUR"
+    try:
+        month_summary = finance_svc.summary(profile["id"], d0, d1, currency)
+        by_category = finance_svc.spending_by_category(profile["id"], d0, d1, currency)
+        limits = finance_svc.limit_status(profile["id"], currency=currency)
+    except exchange_svc.ExchangeRateUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return {
         "profile": {
             "id": profile["id"],
@@ -35,9 +41,9 @@ def me(profile: dict = Depends(require_user)):
             "is_admin": profile.get("is_admin", False),
             "currency": currency,
         },
-        "mes_atual": finance_svc.summary(profile["id"], d0, d1, currency),
-        "gasto_por_categoria": finance_svc.spending_by_category(profile["id"], d0, d1, currency),
-        "limites": finance_svc.limit_status(profile["id"]),
+        "mes_atual": month_summary,
+        "gasto_por_categoria": by_category,
+        "limites": limits,
     }
 
 
@@ -58,6 +64,15 @@ def plans():
         plan["avulso_disponivel"] = str(row.get("stripe_price_id_onetime") or "").startswith("price_")
         out.append(plan)
     return {"plans": out}
+
+
+@router.get("/api/exchange-rates")
+def exchange_rates(currency: str = "EUR"):
+    """Cotação pública usada pelo painel para converter lançamentos."""
+    try:
+        return exchange_svc.rates_for(currency)
+    except exchange_svc.ExchangeRateUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 def _real_email(profile: dict) -> str | None:

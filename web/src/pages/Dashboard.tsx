@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Transaction } from "@/integrations/supabase/types";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import {
   currentMonthChip,
   currentMonthLabel,
@@ -49,6 +50,8 @@ export default function Dashboard() {
     enabled: !!user,
     queryFn: async (): Promise<MeResponse> => (await api.me()) as MeResponse,
   });
+  const currency = me?.profile.currency ?? "EUR";
+  const { data: exchangeRates, isLoading: ratesLoading, convert } = useCurrencyConversion(currency);
 
   const { data: transactions, isLoading: txLoading } = useQuery({
     queryKey: ["dashboard-transactions", user?.id, me?.profile.currency],
@@ -57,7 +60,6 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
-        .eq("currency", me!.profile.currency)
         .order("occurred_on", { ascending: false })
         .limit(8);
       if (error) throw error;
@@ -77,7 +79,7 @@ export default function Dashboard() {
     dayOfMonth,
     goals,
     goalsLoading,
-  } = useDashboardData(range, me?.profile.currency ?? "EUR");
+  } = useDashboardData(range, currency, exchangeRates);
 
   const income = Number(me?.mes_atual.total_income ?? 0);
   const expense = Number(me?.mes_atual.total_expense ?? 0);
@@ -142,7 +144,7 @@ export default function Dashboard() {
     return list;
   }, [meLoading, seriesLoading, categorias, prevByCategory, income, expense, dayOfMonth, daysInMonth]);
 
-  const loadingCards = meLoading || seriesLoading;
+  const loadingCards = meLoading || seriesLoading || ratesLoading;
 
   return (
     <div>
@@ -260,7 +262,12 @@ export default function Dashboard() {
 
       {/* ── Últimas transações ── */}
       <div className="mt-4">
-        <RecentTransactions transactions={transactions ?? []} isLoading={txLoading} />
+        <RecentTransactions
+          transactions={transactions ?? []}
+          isLoading={txLoading || ratesLoading}
+          targetCurrency={currency}
+          convert={convert}
+        />
       </div>
     </div>
   );

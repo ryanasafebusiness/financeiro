@@ -52,7 +52,7 @@ def build_context(profile: dict) -> str:
     currency = normalize_currency(profile.get("currency"))
     s = finance_svc.summary(profile["id"], d0, d1, currency)
     goals = finance_svc.list_goals(profile["id"])
-    limits = finance_svc.limit_status(profile["id"])
+    limits = finance_svc.limit_status(profile["id"], currency=currency)
     categories = finance_svc.list_categories(profile["id"])
 
     lines = [

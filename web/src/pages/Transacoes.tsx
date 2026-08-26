@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Transaction, Category, CurrencyCode } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useCurrencyConversion } from "@/hooks/useCurrencyConversion";
 import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -100,6 +101,7 @@ export default function Transacoes() {
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const selectedCurrency = profile?.currency ?? "EUR";
+  const { convert, isLoading: ratesLoading } = useCurrencyConversion(selectedCurrency);
   const qc = useQueryClient();
 
   const monthOptions = useMemo(() => buildMonthOptions(), []);
@@ -125,7 +127,6 @@ export default function Transacoes() {
         .select("*")
         .gte("occurred_on", first)
         .lte("occurred_on", last)
-        .eq("currency", selectedCurrency)
         .order("occurred_on", { ascending: false });
       if (typeFilter !== "all") {
         query = query.eq("type", typeFilter);
@@ -160,12 +161,12 @@ export default function Transacoes() {
     let income = 0;
     let expense = 0;
     for (const t of transactions) {
-      const amount = Number(t.amount) || 0;
+      const amount = convert(Number(t.amount) || 0, t.currency) ?? 0;
       if (t.type === "income") income += amount;
       else expense += amount;
     }
     return { income, expense, balance: income - expense };
-  }, [transactions]);
+  }, [transactions, convert]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -288,21 +289,21 @@ export default function Transacoes() {
           value={summary.income}
           icon={<ArrowUpCircle className="h-4 w-4" />}
           tone="positive"
-          loading={isLoading}
+        loading={isLoading || ratesLoading}
         />
         <StatTile
           label="Gastos"
           value={summary.expense}
           icon={<ArrowDownCircle className="h-4 w-4" />}
           tone="negative"
-          loading={isLoading}
+        loading={isLoading || ratesLoading}
         />
         <StatTile
           label="Saldo"
           value={summary.balance}
           icon={<Wallet className="h-4 w-4" />}
           tone={summary.balance >= 0 ? "positive" : "negative"}
-          loading={isLoading}
+        loading={isLoading || ratesLoading}
         />
       </div>
 
@@ -378,6 +379,8 @@ export default function Transacoes() {
             <ul className="divide-y divide-border">
               {transactions.map((t) => {
                 const amount = Number(t.amount) || 0;
+                const convertedAmount = convert(amount, t.currency);
+                const wasConverted = t.currency !== selectedCurrency;
                 const isIncome = t.type === "income";
                 const isRecurring = t.source === "recurring";
                 const heading = t.title ?? t.category ?? "Transação";
@@ -444,7 +447,15 @@ export default function Transacoes() {
                             isIncome ? "text-positive" : "text-foreground"
                           )}
                         >
-                          {isIncome ? "+" : "\u2212"} {money(amount, t.currency)}
+                          {isIncome ? "+" : "\u2212"}{" "}
+                          {convertedAmount === null
+                            ? "Cotação indisponível"
+                            : money(convertedAmount, selectedCurrency)}
+                          {wasConverted && convertedAmount !== null && (
+                            <span className="block text-label font-normal text-muted-foreground">
+                              original: {money(amount, t.currency)}
+                            </span>
+                          )}
                         </div>
 
                         {/* Ações — discretas, aparecem no hover em telas grandes */}

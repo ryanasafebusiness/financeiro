@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Goal, Transaction } from "@/integrations/supabase/types";
+import type { CurrencyCode, Goal, Transaction } from "@/integrations/supabase/types";
+import type { ExchangeRates } from "@/hooks/useCurrencyConversion";
 import { useAuth } from "./useAuth";
 
 export type FlowRange = "7d" | "30d" | "3m" | "12m";
@@ -71,7 +72,11 @@ export function currentMonthChip(today = new Date()): string {
  * os totais oficiais do mês continuam vindo de /api/me — estes números servem
  * para comparação com o mês anterior, séries temporais e sparklines.
  */
-export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EUR") {
+export function useDashboardData(
+  range: FlowRange,
+  currency: CurrencyCode = "EUR",
+  exchangeRates?: ExchangeRates,
+) {
   const { user } = useAuth();
   const today = useMemo(() => new Date(), []);
 
@@ -93,7 +98,6 @@ export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EU
         .select("*")
         .gte("occurred_on", from)
         .lte("occurred_on", to)
-        .eq("currency", currency)
         .order("occurred_on", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Transaction[];
@@ -134,7 +138,7 @@ export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EU
 
     for (const t of list) {
       const d = parseIso(t.occurred_on);
-      const amount = Math.abs(Number(t.amount) || 0);
+      const amount = Math.abs(Number(t.amount) || 0) * (exchangeRates?.rates[t.currency] ?? (t.currency === currency ? 1 : 0));
 
       if (d >= prevStart && d <= prevEnd) {
         if (t.type === "income") prevIncome += amount;
@@ -199,7 +203,7 @@ export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EU
         : t.occurred_on.slice(0, 10);
       const bucket = buckets.get(key);
       if (!bucket) continue;
-      const amount = Math.abs(Number(t.amount) || 0);
+      const amount = Math.abs(Number(t.amount) || 0) * (exchangeRates?.rates[t.currency] ?? (t.currency === currency ? 1 : 0));
       if (t.type === "income") bucket.receitas += amount;
       else bucket.despesas += amount;
     }
@@ -213,7 +217,7 @@ export function useDashboardData(range: FlowRange, currency: "EUR" | "BRL" = "EU
       daysInMonth: new Date(y, m + 1, 0).getDate(),
       dayOfMonth: daysSoFar,
     };
-  }, [rows, range, today]);
+  }, [rows, range, today, currency, exchangeRates]);
 
   return {
     isLoading,
