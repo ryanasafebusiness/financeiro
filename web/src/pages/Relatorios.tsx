@@ -220,56 +220,96 @@ export default function Relatorios() {
 
 
   return (
-    <div>
-      <PageHeader
-        title="Relatórios"
-        description="Visualize suas receitas e gastos com gráficos."
-        actions={
-          <Select
-            value={periodo}
-            onChange={(e) => setPeriodo(e.target.value as Periodo)}
-            aria-label="Selecionar período"
-            className="w-full sm:w-52"
-          >
-            <option value="atual">Mês atual</option>
-            <option value="passado">Mês passado</option>
-            <option value="tres">Últimos 3 meses</option>
-            <option value="ano">Ano</option>
-          </Select>
-        }
-      />
-
-      {/* Cards-resumo */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
-        {resumos.map((r) => (
-          <StatTile
-            key={r.titulo}
-            label={r.titulo}
-            value={r.bruto}
-            icon={r.icone}
-            tone={r.tone}
-            loading={loading}
-            format={r.formato}
-          />
-        ))}
+    <div className="flex flex-col min-h-full">
+      {/* ── Desktop Header ── */}
+      <div className="hidden md:block">
+        <PageHeader
+          title="Relatórios"
+          description="Visualize suas receitas e gastos com gráficos."
+          actions={
+            <Select
+              value={periodo}
+              onChange={(e) => setPeriodo(e.target.value as Periodo)}
+              aria-label="Selecionar período"
+              className="w-full sm:w-52"
+            >
+              <option value="atual">Mês atual</option>
+              <option value="passado">Mês passado</option>
+              <option value="tres">Últimos 3 meses</option>
+              <option value="ano">Ano</option>
+            </Select>
+          }
+        />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      {/* ── Mobile Header & Selector ── */}
+      <div className="md:hidden flex items-center justify-between mt-6 mb-4 px-4">
+        <h1 className="text-xl font-bold text-foreground">Resumo</h1>
+        <Select
+          value={periodo}
+          onChange={(e) => setPeriodo(e.target.value as Periodo)}
+          aria-label="Selecionar período"
+          className="h-9 w-auto bg-secondary/50 border-0 pl-3 pr-8 text-sm rounded-full font-medium"
+        >
+          <option value="atual">Mês atual</option>
+          <option value="passado">Mês passado</option>
+          <option value="tres">Últimos 3 meses</option>
+          <option value="ano">Ano</option>
+        </Select>
+      </div>
+
+      {/* Cards-resumo */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4 md:sm:grid-cols-2 lg:grid-cols-4 stagger px-4 md:px-0">
+        {resumos.map((r) => (
+          <div key={r.titulo} className="md:hidden flex flex-col bg-secondary/40 rounded-xl p-3.5">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
+              <span className={cn("text-body", r.tone === "positive" ? "text-positive" : r.tone === "negative" ? "text-negative" : "text-muted-foreground")}>
+                {r.icone}
+              </span>
+              <span className="text-xs font-medium">{r.titulo}</span>
+            </div>
+            <div className="text-base font-bold text-foreground">
+              {loading ? "..." : (r.formato ? r.formato(r.bruto) : money(r.bruto))}
+            </div>
+          </div>
+        ))}
+        {/* Render padrão para Desktop */}
+        <div className="hidden md:contents">
+          {resumos.map((r) => (
+            <StatTile
+              key={r.titulo}
+              label={r.titulo}
+              value={r.bruto}
+              icon={r.icone}
+              tone={r.tone}
+              loading={loading}
+              format={r.formato}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-6 md:mt-4 grid gap-6 md:gap-4 lg:grid-cols-2">
         {/* Receitas x Gastos por mês */}
-        <Card>
-          <CardToolbar
-            icon={<BarChart3 className="h-4 w-4" />}
-            title="Receitas x Gastos"
-            description="Comparativo agregado por mês no período."
-          />
-          <div className="px-3 pb-5 sm:px-4">
+        <div className="bg-background md:bg-card md:rounded-card md:border md:border-border md:shadow-sm">
+          <div className="px-4 md:px-0 md:contents hidden">
+            <CardToolbar
+              icon={<BarChart3 className="h-4 w-4" />}
+              title="Receitas x Gastos"
+              description="Comparativo agregado por mês no período."
+            />
+          </div>
+          <div className="md:hidden flex items-center justify-between mb-4 px-4">
+            <h2 className="text-base font-semibold text-foreground">Evolução do Saldo</h2>
+          </div>
+          <div className="px-1 md:px-3 pb-2 md:pb-5 sm:px-4">
             {loading ? (
-              <Skeleton className="h-[300px] w-full rounded-lg" />
+              <Skeleton className="h-[250px] md:h-[300px] w-full rounded-lg mx-4" />
             ) : vazio || dadosPorMes.length === 0 ? (
               <EstadoVazio mensagem="Nenhuma transação encontrada neste período." />
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dadosPorMes} barGap={6}>
+              <ResponsiveContainer width="100%" height={250} className="md:!h-[300px]">
+                <BarChart data={dadosPorMes} barGap={4} margin={{ left: -20, right: 10 }}>
                   <CartesianGrid
                     vertical={false}
                     stroke="var(--border)"
@@ -307,31 +347,38 @@ export default function Relatorios() {
                     iconSize={8}
                     wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
                   />
-                  <Bar dataKey="Receitas" fill="var(--positive)" radius={[6, 6, 0, 0]} maxBarSize={38} />
-                  <Bar dataKey="Gastos" fill="var(--negative)" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="Receitas" fill="var(--positive)" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="Gastos" fill="var(--negative)" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
-        </Card>
+        </div>
+
+        <div className="md:hidden h-[1px] w-full bg-border/50" />
 
         {/* Gastos por categoria */}
-        <Card>
-          <CardToolbar
-            icon={<PieChartIcon className="h-4 w-4" />}
-            title="Gastos por categoria"
-            description="Distribuição dos gastos no período."
-          />
-          <div className="px-4 pb-5 sm:px-6">
+        <div className="bg-background md:bg-card md:rounded-card md:border md:border-border md:shadow-sm">
+          <div className="px-4 md:px-0 md:contents hidden">
+            <CardToolbar
+              icon={<PieChartIcon className="h-4 w-4" />}
+              title="Gastos por categoria"
+              description="Distribuição dos gastos no período."
+            />
+          </div>
+          <div className="md:hidden flex items-center justify-between mb-2 mt-4 px-4">
+            <h2 className="text-base font-semibold text-foreground">Onde você gastou</h2>
+          </div>
+          <div className="px-4 md:px-4 pb-5 sm:px-6">
             {loading ? (
-              <Skeleton className="h-[300px] w-full rounded-lg" />
+              <Skeleton className="h-[250px] md:h-[300px] w-full rounded-lg" />
             ) : vazio || dadosPorCategoria.length === 0 ? (
               <EstadoVazio mensagem="Nenhum gasto encontrado neste período." />
             ) : (
               <GastosPorCategoria dados={dadosPorCategoria} total={totalGastos} />
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

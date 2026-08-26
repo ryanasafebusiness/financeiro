@@ -270,63 +270,81 @@ export default function Transacoes() {
   }
 
   return (
-    <div>
-      <PageHeader
-        title="Transações"
-        description="Gerencie suas receitas e gastos."
-        actions={
-          <Button onClick={openNew}>
-            <Plus className="h-4 w-4" />
-            Nova transação
-          </Button>
-        }
-      />
+    <div className="flex flex-col min-h-full">
+      {/* ── Desktop Header ── */}
+      <div className="hidden md:block">
+        <PageHeader
+          title="Transações"
+          description="Gerencie suas receitas e gastos."
+          actions={
+            <Button onClick={openNew}>
+              <Plus className="h-4 w-4" />
+              Nova transação
+            </Button>
+          }
+        />
+      </div>
 
-      {/* Resumo do período */}
-      <div className="grid gap-4 sm:grid-cols-3 stagger">
+      {/* ── Mobile Account Summary ── */}
+      <div className="md:hidden bg-primary px-5 pb-6 pt-1 text-primary-foreground -mx-4 sm:-mx-5">
+        <div className="mt-8">
+          <p className="text-sm font-medium text-primary-foreground/90">Saldo atual</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight">
+            {isLoading || ratesLoading ? "..." : money(summary.balance, selectedCurrency)}
+          </p>
+          <div className="mt-4 flex items-center gap-6 text-sm">
+            <div>
+              <p className="text-primary-foreground/70">Receitas</p>
+              <p className="font-semibold text-positive mt-0.5">{money(summary.income, selectedCurrency)}</p>
+            </div>
+            <div>
+              <p className="text-primary-foreground/70">Gastos</p>
+              <p className="font-semibold text-negative mt-0.5">{money(summary.expense, selectedCurrency)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Resumo Desktop ── */}
+      <div className="hidden md:grid gap-4 sm:grid-cols-3 stagger mt-4">
         <StatTile
           label="Receitas"
           value={summary.income}
           icon={<ArrowUpCircle className="h-4 w-4" />}
           tone="positive"
-        loading={isLoading || ratesLoading}
+          loading={isLoading || ratesLoading}
         />
         <StatTile
           label="Gastos"
           value={summary.expense}
           icon={<ArrowDownCircle className="h-4 w-4" />}
           tone="negative"
-        loading={isLoading || ratesLoading}
+          loading={isLoading || ratesLoading}
         />
         <StatTile
           label="Saldo"
           value={summary.balance}
           icon={<Wallet className="h-4 w-4" />}
           tone={summary.balance >= 0 ? "positive" : "negative"}
-        loading={isLoading || ratesLoading}
+          loading={isLoading || ratesLoading}
         />
       </div>
 
-      {/* Filtros */}
-      <div className="mt-4 flex flex-col gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center">
-        <span className="flex items-center justify-between gap-2 text-meta font-medium text-muted-foreground">
+      {/* ── Filtros Mobile (Chips) & Desktop ── */}
+      <div className="mt-4 md:mt-4 flex flex-col gap-3 rounded-xl md:rounded-card md:border md:border-border md:bg-card md:px-4 md:py-3 md:shadow-sm sm:flex-row sm:items-center">
+        <span className="hidden md:flex items-center justify-between gap-2 text-meta font-medium text-muted-foreground">
           <span className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4" />
             Filtros
           </span>
-          <span className="tabular sm:hidden">
-            {isLoading
-              ? "…"
-              : `${transactions.length} ${transactions.length === 1 ? "registro" : "registros"}`}
-          </span>
         </span>
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center px-4 md:px-0">
           <Select
             id="filter-type"
             aria-label="Tipo"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
-            className="h-9 sm:w-40"
+            className="h-10 md:h-9 sm:w-40 bg-secondary/50 md:bg-transparent border-0 md:border md:border-input"
           >
             <option value="all">Todos os tipos</option>
             <option value="expense">Gastos</option>
@@ -338,7 +356,7 @@ export default function Transacoes() {
             aria-label="Mês"
             value={monthFilter}
             onChange={(e) => setMonthFilter(e.target.value)}
-            className="h-9 sm:w-52"
+            className="h-10 md:h-9 sm:w-52 bg-secondary/50 md:bg-transparent border-0 md:border md:border-input"
           >
             {monthOptions.map((m) => (
               <option key={m.value} value={m.value}>
@@ -354,29 +372,35 @@ export default function Transacoes() {
         </span>
       </div>
 
-      {/* Lista */}
-      <Card className="mt-4">
-        <div className="px-3 py-3 sm:px-4">
+      <div className="md:hidden flex items-center justify-between mt-6 mb-2 px-4">
+        <h2 className="text-base font-semibold text-foreground">Extrato</h2>
+      </div>
+
+      {/* ── Lista ── */}
+      <div className="mt-2 md:mt-4 bg-background md:bg-card md:rounded-card md:border md:border-border md:shadow-sm">
+        <div className="px-0 py-0 md:px-4 md:py-3">
           {isLoading ? (
-            <div className="space-y-2 px-2">
+            <div className="space-y-2 px-4 md:px-2 py-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <EmptyState
-              icon={<Inbox />}
-              title="Nenhuma transação encontrada"
-              description="Não há lançamentos para os filtros selecionados. Ajuste o período ou registre um novo."
-              action={
-                <Button variant="outline" size="sm" onClick={openNew}>
-                  <Plus className="h-4 w-4" />
-                  Adicionar transação
-                </Button>
-              }
-            />
+            <div className="px-4 py-8">
+              <EmptyState
+                icon={<Inbox />}
+                title="Nenhuma transação encontrada"
+                description="Não há lançamentos para os filtros selecionados. Ajuste o período ou registre um novo."
+                action={
+                  <Button variant="outline" size="sm" onClick={openNew}>
+                    <Plus className="h-4 w-4" />
+                    Adicionar transação
+                  </Button>
+                }
+              />
+            </div>
           ) : (
-            <ul className="divide-y divide-border">
+            <ul className="divide-y divide-border/50 md:divide-border">
               {transactions.map((t) => {
                 const amount = Number(t.amount) || 0;
                 // Mantemos o valor e a moeda exatos da transação
@@ -391,15 +415,15 @@ export default function Transacoes() {
                 const Icon = categoryIcon(t.category, t.type);
 
                 return (
-                  <li key={t.id} className="group">
-                    <div className="flex items-start gap-3 rounded-lg px-3 py-3 transition-colors duration-fast hover:bg-muted/60">
+                  <li key={t.id} className="group px-4 md:px-0">
+                    <div className="flex items-start gap-3 md:rounded-lg py-3.5 md:py-3 transition-colors duration-fast md:hover:bg-muted/60">
                       <span
                         className={cn(
-                          "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                          "mt-0.5 flex h-10 w-10 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full md:rounded-lg",
                           isIncome ? "bg-positive/10 text-positive" : "bg-muted text-muted-foreground"
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-5 w-5 md:h-4 md:w-4" />
                       </span>
 
                       <div className="min-w-0 flex-1 space-y-1">
@@ -408,7 +432,7 @@ export default function Transacoes() {
                             {heading}
                           </span>
                           {isRecurring && (
-                            <Badge variant="outline" className="gap-1">
+                            <Badge variant="outline" className="gap-1 hidden md:flex">
                               <Repeat className="h-3 w-3" />
                               recorrente
                             </Badge>
@@ -479,7 +503,7 @@ export default function Transacoes() {
             </ul>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* Dialog de criação/edição */}
       <Dialog open={dialogOpen} onOpenChange={(b) => (b ? setDialogOpen(true) : closeDialog())}>
