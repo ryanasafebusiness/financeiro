@@ -80,8 +80,8 @@ export function RecentTransactions({
               const Icon = categoryIcon(tx.category, tx.type);
               const title = tx.title ?? tx.category ?? "Transação";
               const meta = [tx.category, shortDate(tx.occurred_on)].filter(Boolean).join(" · ");
-              const original = Math.abs(Number(tx.amount));
-              const converted = convert(original, tx.currency);
+              const original = Number(tx.amount);
+              // mantendo junto (na mesma lista) mas especificando a moeda original
 
               return (
                 <li key={tx.id}>
@@ -111,7 +111,7 @@ export function RecentTransactions({
                         isIncome ? "text-positive" : "text-foreground"
                       )}
                     >
-                      {isIncome ? "+" : "−"} {converted === null ? "Cotação indisponível" : money(converted, targetCurrency)}
+                      {isIncome ? "+" : "−"} {money(Math.abs(original), tx.currency)}
                     </span>
                   </div>
                 </li>

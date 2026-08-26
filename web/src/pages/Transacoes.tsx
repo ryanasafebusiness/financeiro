@@ -379,8 +379,7 @@ export default function Transacoes() {
             <ul className="divide-y divide-border">
               {transactions.map((t) => {
                 const amount = Number(t.amount) || 0;
-                const convertedAmount = convert(amount, t.currency);
-                const wasConverted = t.currency !== selectedCurrency;
+                // Mantemos o valor e a moeda exatos da transação
                 const isIncome = t.type === "income";
                 const isRecurring = t.source === "recurring";
                 const heading = t.title ?? t.category ?? "Transação";
@@ -448,14 +447,7 @@ export default function Transacoes() {
                           )}
                         >
                           {isIncome ? "+" : "\u2212"}{" "}
-                          {convertedAmount === null
-                            ? "Cotação indisponível"
-                            : money(convertedAmount, selectedCurrency)}
-                          {wasConverted && convertedAmount !== null && (
-                            <span className="block text-label font-normal text-muted-foreground">
-                              original: {money(amount, t.currency)}
-                            </span>
-                          )}
+                          {money(amount, t.currency)}
                         </div>
 
                         {/* Ações — discretas, aparecem no hover em telas grandes */}
