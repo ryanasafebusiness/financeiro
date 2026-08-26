@@ -40,7 +40,7 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-/** Fluxo financeiro: receitas x despesas, visual Apple/Stripe. */
+/** Fluxo financeiro: receitas x despesas, integrado ao visual Nubank. */
 export function CashflowChart({
   data,
   range,

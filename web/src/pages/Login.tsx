@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input";
 import { OtpInput, type OtpInputHandle, type OtpStatus } from "@/components/ui/otp-input";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -105,6 +106,10 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle className="border border-border bg-card/80 shadow-xs backdrop-blur-sm" />
+      </div>
+
       {/* Spotlight sutil ao fundo — profundidade sem ruído. */}
       <div
         aria-hidden

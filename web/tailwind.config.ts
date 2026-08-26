@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/** Os tokens guardam cores completas em OKLCH, como no tema Vercel do 21st.dev. */
+/** Os tokens guardam cores completas e preservam a paleta Nubank do 21st.dev. */
 const token = (name: string) => `color-mix(in oklch, var(--${name}) calc(<alpha-value> * 100%), transparent)`;
 
 export default {

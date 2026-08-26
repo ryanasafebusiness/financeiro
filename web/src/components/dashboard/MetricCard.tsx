@@ -47,11 +47,17 @@ export function MetricCard({
   const DeltaIcon = delta === null ? Minus : delta >= 0 ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <Card className={cn("group overflow-hidden surface-interactive", className)}>
+    <Card
+      className={cn(
+        "group overflow-hidden surface-interactive",
+        emphasis && "large-summary-card",
+        className
+      )}
+    >
       <div className={cn("relative px-5 pb-5 pt-5", emphasis && "sm:px-6")}>
         <div className="flex items-start justify-between gap-3">
-          <p className="text-meta font-medium text-muted-foreground">{label}</p>
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors duration-200 group-hover:bg-primary-soft group-hover:text-primary [&>svg]:h-4 [&>svg]:w-4">
+          <p className="summary-card-label text-meta font-medium text-muted-foreground">{label}</p>
+          <span className="summary-card-icon flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors duration-200 group-hover:bg-primary-soft group-hover:text-primary [&>svg]:h-4 [&>svg]:w-4">
             {icon}
           </span>
         </div>
@@ -61,13 +67,14 @@ export function MetricCard({
           className={cn(
             "mt-3 block font-semibold",
             emphasis ? "text-metric sm:text-metric-lg" : "text-[1.625rem] leading-8 tracking-tight sm:text-metric",
+            "summary-card-value",
             valueTone
           )}
         />
 
         <div className="mt-2 flex items-center gap-2">
           {delta === null ? (
-            <span className="text-label text-muted-foreground">sem base de comparação</span>
+            <span className="summary-card-meta text-label text-muted-foreground">sem base de comparação</span>
           ) : (
             <>
               <span
@@ -79,7 +86,7 @@ export function MetricCard({
                 <DeltaIcon className="h-3 w-3" />
                 {Math.abs(delta).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
               </span>
-              <span className="text-label text-muted-foreground">vs. mês passado</span>
+              <span className="summary-card-meta text-label text-muted-foreground">vs. mês passado</span>
             </>
           )}
         </div>

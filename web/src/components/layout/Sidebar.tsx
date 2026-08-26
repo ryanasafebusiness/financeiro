@@ -42,7 +42,7 @@ function useActiveIndicator(collapsed: boolean) {
 }
 
 /**
- * Sidebar minimalista com contraste monocromático do tema Vercel.
+ * Sidebar minimalista com a profundidade violeta do tema Nubank.
  */
 export function Sidebar({
   collapsed,

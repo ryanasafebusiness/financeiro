@@ -2,37 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tema Vercel por Serafim (21st.dev), adaptado aos tokens do ZapWallet. */
+/* Design system do ZapWallet: superfícies neutras, contraste financeiro e acento contido. */
 
 @layer base {
   :root {
     /* ── Superfícies ── */
-    --background: oklch(0.99 0 0);
-    --surface: oklch(0.99 0 0);
-    --surface-secondary: oklch(0.97 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0 0 0);
-    --popover: oklch(0.99 0 0);
-    --popover-foreground: oklch(0 0 0);
+    --background: oklch(0.978 0.006 270);
+    --surface: hsl(0 0% 100%);
+    --surface-secondary: oklch(0.955 0.008 270);
+    --card: hsl(0 0% 100%);
+    --card-foreground: oklch(0.18 0.018 270);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: oklch(0.18 0.018 270);
 
     /* ── Texto ── */
-    --foreground: oklch(0 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.44 0 0);
+    --foreground: oklch(0.18 0.018 270);
+    --muted: oklch(0.945 0.008 270);
+    --muted-foreground: oklch(0.47 0.018 270);
+    --text-primary: var(--foreground);
+    --text-secondary: var(--muted-foreground);
 
     /* ── Marca ── */
-    --primary: oklch(0 0 0);
-    --primary-hover: oklch(0.18 0 0);
-    --primary-foreground: oklch(1 0 0);
-    --primary-soft: oklch(0.94 0 0);
+    --primary: oklch(0.58 0.16 154);
+    --primary-hover: oklch(0.52 0.16 154);
+    --primary-foreground: hsl(0 0% 100%);
+    --primary-soft: oklch(0.93 0.04 154);
 
-    --secondary: oklch(0.94 0 0);
-    --secondary-foreground: oklch(0 0 0);
-    --accent: oklch(0.94 0 0);
-    --accent-foreground: oklch(0 0 0);
+    --secondary: oklch(0.93 0.01 270);
+    --secondary-foreground: oklch(0.24 0.02 270);
+    --accent: oklch(0.91 0.035 154);
+    --accent-foreground: oklch(0.4 0.12 154);
 
     /* ── Semânticas ── */
     --positive: oklch(0.58 0.16 154);
+    --success: var(--positive);
     --negative: oklch(0.63 0.19 23.03);
     --warning: oklch(0.72 0.16 75.35);
     --info: oklch(0.55 0.22 264.53);
@@ -40,31 +43,31 @@
     --destructive-foreground: oklch(1 0 0);
 
     /* ── Traços ── */
-    --border: oklch(0.92 0 0);
-    --border-strong: oklch(0.82 0 0);
-    --input: oklch(0.94 0 0);
-    --ring: oklch(0 0 0);
+    --border: oklch(0.89 0.01 270);
+    --border-strong: oklch(0.78 0.015 270);
+    --input: oklch(0.87 0.012 270);
+    --ring: var(--primary);
 
     /* ── Dataviz (categorias) ── */
-    --chart-1: oklch(0.81 0.17 75.35);
-    --chart-2: oklch(0.55 0.22 264.53);
-    --chart-3: oklch(0.72 0 0);
-    --chart-4: oklch(0.92 0 0);
-    --chart-5: oklch(0.56 0 0);
+    --chart-1: hsl(270 70% 48%);
+    --chart-2: hsl(290 60% 48%);
+    --chart-3: hsl(250 60% 52%);
+    --chart-4: hsl(310 60% 52%);
+    --chart-5: hsl(270 40% 62%);
     --chart-6: oklch(0.63 0.19 23.03);
     --chart-7: oklch(0.64 0.15 290);
     --chart-8: oklch(0.62 0.14 154);
 
     /* ── Raios ── */
-    --radius: 0.5rem;
-    --radius-card: 0.5rem;
+    --radius: 0.75rem;
+    --radius-card: 0.875rem;
     --radius-pill: 999px;
 
     /* ── Sombras (extremamente sutis) ── */
-    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.12);
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.18);
-    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.18), 0 8px 24px rgb(0 0 0 / 0.08);
-    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.18), 0 18px 48px rgb(0 0 0 / 0.14);
+    --shadow-xs: 0 1px 2px hsl(270 50% 12% / 0.08);
+    --shadow-sm: 0 1px 3px hsl(270 50% 12% / 0.1), 0 8px 22px hsl(270 50% 12% / 0.05);
+    --shadow-md: 0 2px 5px hsl(270 50% 12% / 0.12), 0 16px 38px hsl(270 60% 20% / 0.1);
+    --shadow-lg: 0 4px 10px hsl(270 50% 12% / 0.14), 0 24px 64px hsl(270 60% 20% / 0.16);
 
     /* ── Movimento ── */
     --duration-fast: 150ms;
@@ -79,53 +82,56 @@
   }
 
   .dark {
-    --background: oklch(0 0 0);
-    --surface: oklch(0.18 0 0);
-    --surface-secondary: oklch(0.18 0 0);
-    --card: oklch(0.14 0 0);
-    --card-foreground: oklch(1 0 0);
-    --popover: oklch(0.18 0 0);
-    --popover-foreground: oklch(1 0 0);
+    --background: oklch(0.145 0.012 270);
+    --surface: oklch(0.175 0.014 270);
+    --surface-secondary: oklch(0.215 0.016 270);
+    --card: oklch(0.195 0.016 270);
+    --card-foreground: oklch(0.96 0.008 270);
+    --popover: oklch(0.185 0.016 270);
+    --popover-foreground: oklch(0.96 0.008 270);
 
-    --foreground: oklch(1 0 0);
-    --muted: oklch(0.23 0 0);
-    --muted-foreground: oklch(0.72 0 0);
+    --foreground: oklch(0.96 0.008 270);
+    --muted: oklch(0.245 0.016 270);
+    --muted-foreground: oklch(0.7 0.016 270);
+    --text-primary: var(--foreground);
+    --text-secondary: var(--muted-foreground);
 
-    --primary: oklch(1 0 0);
-    --primary-hover: oklch(0.85 0 0);
-    --primary-foreground: oklch(0 0 0);
-    --primary-soft: oklch(0.23 0 0);
+    --primary: oklch(0.72 0.17 154);
+    --primary-hover: oklch(0.77 0.15 154);
+    --primary-foreground: oklch(0.15 0.025 154);
+    --primary-soft: oklch(0.27 0.055 154);
 
-    --secondary: oklch(0.25 0 0);
-    --secondary-foreground: oklch(1 0 0);
-    --accent: oklch(0.32 0 0);
-    --accent-foreground: oklch(1 0 0);
+    --secondary: oklch(0.235 0.018 270);
+    --secondary-foreground: oklch(0.94 0.008 270);
+    --accent: oklch(0.285 0.045 154);
+    --accent-foreground: oklch(0.82 0.095 154);
 
     --positive: oklch(0.72 0.17 154);
+    --success: var(--positive);
     --negative: oklch(0.69 0.20 23.91);
     --warning: oklch(0.81 0.17 75.35);
     --info: oklch(0.58 0.21 260.84);
     --destructive: oklch(0.69 0.20 23.91);
     --destructive-foreground: oklch(0 0 0);
 
-    --border: oklch(0.26 0 0);
-    --border-strong: oklch(0.38 0 0);
-    --input: oklch(0.32 0 0);
-    --ring: oklch(0.72 0 0);
+    --border: oklch(0.275 0.018 270);
+    --border-strong: oklch(0.38 0.022 270);
+    --input: oklch(0.3 0.02 270);
+    --ring: var(--primary);
 
-    --chart-1: oklch(0.81 0.17 75.35);
-    --chart-2: oklch(0.58 0.21 260.84);
-    --chart-3: oklch(0.56 0 0);
-    --chart-4: oklch(0.44 0 0);
-    --chart-5: oklch(0.92 0 0);
+    --chart-1: hsl(270 70% 60%);
+    --chart-2: hsl(290 60% 55%);
+    --chart-3: hsl(250 60% 55%);
+    --chart-4: hsl(310 60% 60%);
+    --chart-5: hsl(270 40% 70%);
     --chart-6: oklch(0.69 0.20 23.91);
     --chart-7: oklch(0.66 0.16 290);
     --chart-8: oklch(0.72 0.17 154);
 
-    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
-    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.35);
-    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.5), 0 18px 48px rgb(0 0 0 / 0.5);
+    --shadow-xs: 0 1px 2px hsl(270 80% 2% / 0.45);
+    --shadow-sm: 0 1px 3px hsl(270 80% 2% / 0.52), 0 10px 28px hsl(270 80% 2% / 0.2);
+    --shadow-md: 0 2px 6px hsl(270 80% 2% / 0.58), 0 18px 44px hsl(270 80% 2% / 0.32);
+    --shadow-lg: 0 4px 12px hsl(270 80% 2% / 0.62), 0 28px 72px hsl(270 80% 2% / 0.46);
   }
 
   * {
@@ -134,6 +140,8 @@
 
   html {
     -webkit-tap-highlight-color: transparent;
+    min-height: 100%;
+    background: var(--background);
   }
 
   body {
@@ -141,6 +149,9 @@
     font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     text-rendering: optimizeLegibility;
+    min-height: 100dvh;
+    background-image: radial-gradient(56rem 32rem at 85% -12%, color-mix(in oklch, var(--primary) 4%, transparent), transparent 68%);
+    background-attachment: fixed;
   }
 
   /* Hierarquia tipográfica: letter-spacing sutilmente negativo em títulos. */
@@ -196,7 +207,36 @@
     @apply transition-[transform,box-shadow,border-color] duration-200 ease-[var(--ease-out)];
   }
   .surface-interactive:hover {
-    @apply -translate-y-px border-border-strong shadow-md;
+    @apply -translate-y-px border-primary/35 shadow-md;
+  }
+
+  /* Cartão principal de alto contraste, com a marca usada apenas como acento. */
+  .large-summary-card {
+    isolation: isolate;
+    border-color: color-mix(in oklch, var(--primary) 22%, var(--border));
+    background:
+      radial-gradient(24rem 12rem at 105% -15%, color-mix(in oklch, var(--primary) 32%, transparent), transparent 62%),
+      linear-gradient(145deg, oklch(0.25 0.035 275), oklch(0.17 0.02 270));
+    box-shadow: 0 18px 48px oklch(0.12 0.025 270 / 0.24);
+  }
+  .large-summary-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(115deg, hsl(0 0% 100% / 0.08), transparent 35%);
+    pointer-events: none;
+  }
+  .large-summary-card .summary-card-label,
+  .large-summary-card .summary-card-meta {
+    color: oklch(0.8 0.012 270);
+  }
+  .large-summary-card .summary-card-value {
+    color: hsl(0 0% 100%);
+  }
+  .large-summary-card .summary-card-icon {
+    background: hsl(0 0% 100% / 0.13);
+    color: hsl(0 0% 100%);
   }
 
   /* Faixa de foco consistente em toda a UI. */

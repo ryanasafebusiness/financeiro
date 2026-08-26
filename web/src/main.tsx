@@ -5,12 +5,34 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import App from "./App";
 import { AuthProvider } from "./hooks/useAuth";
+import { ThemeProvider, useTheme } from "./hooks/useTheme";
+import { registerPWA } from "./lib/pwa";
+import { OfflineNotice } from "./components/mobile/OfflineNotice";
 import "./index.css";
 
-// O tema Vercel referenciado é apresentado em dark mode; mantemos essa
-// aparência desde o primeiro paint, sem o clarão do tema claro.
-document.documentElement.classList.add("dark");
-document.documentElement.style.colorScheme = "dark";
+registerPWA();
+
+function AppContent() {
+  const { resolvedTheme } = useTheme();
+
+  return (
+    <AuthProvider>
+      <App />
+      <OfflineNotice />
+      <Toaster
+        position="top-center"
+        richColors
+        theme={resolvedTheme}
+        toastOptions={{
+          style: {
+            borderRadius: "var(--radius)",
+            boxShadow: "var(--shadow-md)",
+          },
+        }}
+      />
+    </AuthProvider>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,19 +51,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-          <Toaster
-            position="top-center"
-            richColors
-            toastOptions={{
-              style: {
-                borderRadius: "var(--radius)",
-                boxShadow: "var(--shadow-md)",
-              },
-            }}
-          />
-        </AuthProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>

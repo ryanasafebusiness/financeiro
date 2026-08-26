@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Check, ChevronDown, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, TrendingDown, TrendingUp, Wallet, ChevronRight, Repeat, Target, Gauge } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { Dropdown, DropdownItem, DropdownLabel } from "@/components/ui/dropdown";
@@ -147,127 +147,246 @@ export default function Dashboard() {
   const loadingCards = meLoading || seriesLoading || ratesLoading;
 
   return (
-    <div>
-      {/* ── Header ── */}
-      <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-page-title font-bold text-foreground">
-            {meLoading || !firstName ? "Olá 👋" : `Olá, ${firstName} 👋`}
-          </h1>
-          <p className="mt-1 text-body text-muted-foreground">
-            Aqui está o resumo das suas finanças em {currentMonthLabel()}.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Seletor de período: o resumo é sempre do mês corrente;
-              os demais períodos abrem em Relatórios. */}
-          <Dropdown
-            trigger={({ toggle, open }) => (
-              <button
-                type="button"
-                onClick={toggle}
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-meta font-medium text-foreground shadow-xs transition-colors duration-fast hover:border-border-strong"
-              >
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                {currentMonthChip()}
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform duration-fast",
-                    open && "rotate-180"
-                  )}
-                />
-              </button>
-            )}
-          >
-            <DropdownLabel>Período</DropdownLabel>
-            <DropdownItem icon={<Check />}>{currentMonthChip()} (atual)</DropdownItem>
-            <DropdownItem onSelect={() => navigate("/relatorios?periodo=passado")}>
-              Mês passado
-            </DropdownItem>
-            <DropdownItem onSelect={() => navigate("/relatorios?periodo=tres")}>
-              Últimos 3 meses
-            </DropdownItem>
-            <DropdownItem onSelect={() => navigate("/relatorios?periodo=ano")}>
-              Este ano
-            </DropdownItem>
-          </Dropdown>
-          <QuickActions />
+    <div className="md:px-0 flex flex-col min-h-full">
+      {/* ── Saldo da Conta Mobile ── */}
+      <div className="bg-primary px-5 pb-6 pt-1 text-primary-foreground md:hidden">
+        <div className="mt-8 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-primary-foreground/90">Conta</p>
+            <p className="mt-1 text-2xl font-bold tracking-tight">
+              {meLoading ? "..." : money(balance)}
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-primary-foreground/70" />
         </div>
       </div>
 
-      {/* ── Cards financeiros: saldo com mais peso ── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
-        {loadingCards ? (
-          <>
-            <MetricCardSkeleton emphasis className="sm:col-span-2" />
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-          </>
-        ) : (
-          <>
-            <MetricCard
-              className="sm:col-span-2"
-              emphasis
-              label="Saldo do mês"
-              value={balance}
-              delta={pctChange(balance, previous.balance)}
-              series={series.balance}
-              icon={<Wallet />}
-              tone={balance >= 0 ? "neutral" : "negative"}
-            />
-            <MetricCard
-              label="Receitas"
-              value={income}
-              delta={pctChange(income, previous.income)}
-              series={series.income}
-              icon={<TrendingUp />}
-              tone="positive"
-            />
-            <MetricCard
-              label="Gastos"
-              value={expense}
-              delta={pctChange(expense, previous.expense)}
-              series={series.expense}
-              icon={<TrendingDown />}
-              tone="negative"
-              higherIsBetter={false}
-            />
-          </>
-        )}
+      {/* ── Quick Actions Mobile (Carousel) ── */}
+      <div className="md:hidden mt-6 overflow-x-auto px-5 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex w-max gap-4">
+          <button onClick={() => navigate("/transacoes?novo=1")} className="flex flex-col items-center gap-2 w-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/80 dark:bg-card">
+              <TrendingUp className="h-6 w-6 text-foreground" />
+            </div>
+            <span className="text-center text-[12px] font-semibold text-foreground leading-tight">Receita</span>
+          </button>
+          <button onClick={() => navigate("/transacoes?novo=1")} className="flex flex-col items-center gap-2 w-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/80 dark:bg-card">
+              <TrendingDown className="h-6 w-6 text-foreground" />
+            </div>
+            <span className="text-center text-[12px] font-semibold text-foreground leading-tight">Gasto</span>
+          </button>
+          <button onClick={() => navigate("/recorrentes?novo=1")} className="flex flex-col items-center gap-2 w-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/80 dark:bg-card">
+              <Repeat className="h-6 w-6 text-foreground" />
+            </div>
+            <span className="text-center text-[12px] font-semibold text-foreground leading-tight">Recorrente</span>
+          </button>
+          <button onClick={() => navigate("/metas?novo=1")} className="flex flex-col items-center gap-2 w-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/80 dark:bg-card">
+              <Target className="h-6 w-6 text-foreground" />
+            </div>
+            <span className="text-center text-[12px] font-semibold text-foreground leading-tight">Metas</span>
+          </button>
+          <button onClick={() => navigate("/limites?novo=1")} className="flex flex-col items-center gap-2 w-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary/80 dark:bg-card">
+              <Gauge className="h-6 w-6 text-foreground" />
+            </div>
+            <span className="text-center text-[12px] font-semibold text-foreground leading-tight">Limites</span>
+          </button>
+        </div>
       </div>
 
-      {/* ── Fluxo financeiro ── */}
-      <div className="mt-4">
-        <CashflowChart
-          data={flow}
-          range={range}
-          onRangeChange={setRange}
-          isLoading={seriesLoading}
-          hasData={hasFlowData}
-        />
+      {/* ── Cards "Meus Cartões" Mobile ── */}
+      <div className="md:hidden px-5 mb-6 mt-2">
+        <button onClick={() => navigate("/recorrentes")} className="flex w-full items-center gap-3 rounded-xl bg-secondary/60 dark:bg-card p-4 transition-transform active:scale-[0.98]">
+          <Wallet className="h-5 w-5 text-foreground" />
+          <span className="text-sm font-semibold text-foreground">Minhas assinaturas</span>
+        </button>
       </div>
 
-      {/* ── Categorias | Limites ── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.35fr_1fr]">
-        <CategoryDonut data={categorias} isLoading={meLoading} />
-        <LimitsCard limits={limites} isLoading={meLoading} />
-      </div>
+      <div className="md:hidden h-[1px] w-full bg-border" />
 
-      {/* ── Metas | Insights ── */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <GoalsCard goals={goals} isLoading={goalsLoading} />
-        <InsightsCard insights={insights} isLoading={loadingCards} />
-      </div>
+      {/* Desktop Wrapper Start */}
+      <div className="px-4 py-6 sm:px-5 md:px-0 md:py-0 w-full">
+        {/* ── Header Desktop ── */}
+        <div className="hidden mb-7 md:flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-page-title font-bold text-foreground">
+              {meLoading || !firstName ? "Olá 👋" : `Olá, ${firstName} 👋`}
+            </h1>
+            <p className="mt-1 text-body text-muted-foreground">
+              Aqui está o resumo das suas finanças em {currentMonthLabel()}.
+            </p>
+          </div>
 
-      {/* ── Últimas transações ── */}
-      <div className="mt-4">
-        <RecentTransactions
-          transactions={transactions ?? []}
-          isLoading={txLoading || ratesLoading}
-          targetCurrency={currency}
-          convert={convert}
-        />
+          <div className="flex flex-wrap items-center gap-2">
+            <Dropdown
+              trigger={({ toggle, open }) => (
+                <button
+                  type="button"
+                  onClick={toggle}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-meta font-medium text-foreground shadow-xs transition-colors duration-fast hover:border-border-strong"
+                >
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  {currentMonthChip()}
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform duration-fast",
+                      open && "rotate-180"
+                    )}
+                  />
+                </button>
+              )}
+            >
+              <DropdownLabel>Período</DropdownLabel>
+              <DropdownItem icon={<Check />}>{currentMonthChip()} (atual)</DropdownItem>
+              <DropdownItem onSelect={() => navigate("/relatorios?periodo=passado")}>
+                Mês passado
+              </DropdownItem>
+              <DropdownItem onSelect={() => navigate("/relatorios?periodo=tres")}>
+                Últimos 3 meses
+              </DropdownItem>
+              <DropdownItem onSelect={() => navigate("/relatorios?periodo=ano")}>
+                Este ano
+              </DropdownItem>
+            </Dropdown>
+            <QuickActions />
+          </div>
+        </div>
+
+        {/* ── Cards financeiros Desktop ── */}
+        <div className="hidden md:grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+          {loadingCards ? (
+            <>
+              <MetricCardSkeleton emphasis className="sm:col-span-2" />
+              <MetricCardSkeleton />
+              <MetricCardSkeleton />
+            </>
+          ) : (
+            <>
+              <MetricCard
+                className="sm:col-span-2"
+                emphasis
+                label="Saldo do mês"
+                value={balance}
+                delta={pctChange(balance, previous.balance)}
+                series={series.balance}
+                icon={<Wallet />}
+                tone={balance >= 0 ? "neutral" : "negative"}
+              />
+              <MetricCard
+                label="Receitas"
+                value={income}
+                delta={pctChange(income, previous.income)}
+                series={series.income}
+                icon={<TrendingUp />}
+                tone="positive"
+              />
+              <MetricCard
+                label="Gastos"
+                value={expense}
+                delta={pctChange(expense, previous.expense)}
+                series={series.expense}
+                icon={<TrendingDown />}
+                tone="negative"
+                higherIsBetter={false}
+              />
+            </>
+          )}
+        </div>
+
+        {/* ── Receitas e Gastos Mobile ── */}
+        <div className="md:hidden py-5 -mx-4 px-4 sm:-mx-5 sm:px-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-foreground">Receitas e Gastos</h2>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-muted-foreground">Gasto atual</p>
+            <p className="text-xl font-bold text-foreground">{money(expense)}</p>
+            <p className="text-xs text-muted-foreground mt-2">Receitas no período de {money(income)}</p>
+          </div>
+        </div>
+
+        <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 my-2" />
+
+        {/* ── Fluxo financeiro ── */}
+        <div className="mt-4 md:mt-4">
+          <div className="md:hidden flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-foreground">Fluxo de Caixa</h2>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <CashflowChart
+            data={flow}
+            range={range}
+            onRangeChange={setRange}
+            isLoading={seriesLoading}
+            hasData={hasFlowData}
+          />
+        </div>
+
+        <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 mt-6 mb-2" />
+
+        {/* ── Categorias | Limites ── */}
+        <div className="mt-4 md:mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-[1.35fr_1fr]">
+          <div>
+            <div className="md:hidden flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-foreground">Categorias</h2>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <CategoryDonut data={categorias} isLoading={meLoading} />
+          </div>
+          
+          <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 my-4" />
+          
+          <div>
+            <div className="md:hidden flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-foreground">Limites</h2>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <LimitsCard limits={limites} isLoading={meLoading} />
+          </div>
+        </div>
+
+        <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 my-6" />
+
+        {/* ── Metas | Insights ── */}
+        <div className="mt-4 md:mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <div className="md:hidden flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-foreground">Metas</h2>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <GoalsCard goals={goals} isLoading={goalsLoading} />
+          </div>
+          
+          <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 my-4" />
+          
+          <div>
+            <div className="md:hidden flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-foreground">Dicas para você</h2>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <InsightsCard insights={insights} isLoading={loadingCards} />
+          </div>
+        </div>
+
+        <div className="md:hidden h-[1px] w-full bg-border -mx-4 sm:-mx-5 my-6" />
+
+        {/* ── Últimas transações ── */}
+        <div className="mt-4 md:mt-4">
+          <div className="md:hidden flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-foreground">Últimas transações</h2>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <RecentTransactions
+            transactions={transactions ?? []}
+            isLoading={txLoading || ratesLoading}
+            targetCurrency={currency}
+            convert={convert}
+          />
+        </div>
       </div>
     </div>
   );

@@ -15,6 +15,8 @@ import { CommandMenu, useCommandShortcut, type CommandItem } from "@/components/
 import { Sidebar } from "./Sidebar";
 import { Topbar, type Alert } from "./Topbar";
 import { BottomNav } from "./BottomNav";
+import { MobileHeader } from "../mobile/MobileHeader";
+import { MobileBottomNavigation } from "../mobile/MobileBottomNavigation";
 
 const COLLAPSED_KEY = "zw:sidebar-collapsed";
 
@@ -239,13 +241,22 @@ export default function AppLayout() {
           collapsed ? "md:pl-[var(--sidebar-width-collapsed)]" : "md:pl-[var(--sidebar-width)]"
         )}
       >
-        <Topbar
+        <div className="hidden md:block">
+          <Topbar
+            profile={profile}
+            alerts={alerts}
+            onOpenMenu={() => setDrawerOpen(true)}
+            onOpenCommand={openCommand}
+            onSignOut={handleSignOut}
+            onCurrencyChange={handleCurrencyChange}
+          />
+        </div>
+        <MobileHeader
           profile={profile}
-          alerts={alerts}
-          onOpenMenu={() => setDrawerOpen(true)}
-          onOpenCommand={openCommand}
-          onSignOut={handleSignOut}
-          onCurrencyChange={handleCurrencyChange}
+          alertCount={alerts.length}
+          onOpenSearch={openCommand}
+          onOpenAlerts={openCommand}
+          onOpenProfile={() => setDrawerOpen(true)}
         />
 
         {banner && (
@@ -261,13 +272,19 @@ export default function AppLayout() {
         )}
 
         <main className="min-w-0 flex-1 overflow-x-hidden pb-20 md:pb-0">
-          <div className="mx-auto w-full min-w-0 max-w-content px-4 py-6 sm:px-5 md:px-8 md:py-8">
+          <div className="mx-auto w-full min-w-0 max-w-content md:px-8 md:py-8">
             <Outlet />
           </div>
         </main>
       </div>
 
-      <BottomNav />
+      <div className="hidden md:block">
+        <BottomNav />
+      </div>
+      <MobileBottomNavigation 
+        onCreate={() => navigate("/transacoes?novo=1")} 
+        onMore={() => setDrawerOpen(true)} 
+      />
 
       <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} items={commandItems} />
     </div>

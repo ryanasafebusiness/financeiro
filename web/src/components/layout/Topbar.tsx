@@ -3,6 +3,7 @@ import { Bell, Menu, Search, LogOut, CreditCard, Sparkles, Coins } from "lucide-
 import { cn } from "@/lib/utils";
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from "@/components/ui/dropdown";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { Profile } from "@/integrations/supabase/types";
 import type { CurrencyCode } from "@/lib/utils";
 
@@ -40,18 +41,18 @@ export function Topbar({
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-30 border-b border-transparent md:border-border bg-primary md:bg-background/70 backdrop-blur-xl md:supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 w-full max-w-content items-center gap-3 px-4 md:px-8">
         <button
           type="button"
           onClick={onOpenMenu}
           aria-label="Abrir menu"
-          className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-primary-foreground/80 md:text-muted-foreground transition-colors duration-fast hover:bg-primary-hover hover:text-primary-foreground md:hover:bg-muted md:hover:text-foreground md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        <span className="text-[0.9375rem] font-semibold tracking-tight md:hidden">ZapWallet</span>
+        <span className="text-[0.9375rem] font-semibold tracking-tight text-primary-foreground md:hidden">ZapWallet</span>
 
         {/* Gatilho do command menu */}
         <button
@@ -71,6 +72,8 @@ export function Topbar({
         </button>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <div className="hidden md:block"><ThemeToggle /></div>
+
           {/* Notificações */}
           <Dropdown
             menuClassName="w-[min(20rem,calc(100vw-1.5rem))]"
@@ -81,7 +84,7 @@ export function Topbar({
                 aria-label="Notificações"
                 className={cn(
                   "relative flex h-9 w-9 items-center justify-center rounded-md transition-colors duration-fast",
-                  open ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  open ? "bg-primary-hover text-primary-foreground md:bg-muted md:text-foreground" : "text-primary-foreground/80 hover:bg-primary-hover hover:text-primary-foreground md:text-muted-foreground md:hover:bg-muted md:hover:text-foreground"
                 )}
               >
                 <Bell className="h-[1.05rem] w-[1.05rem]" />
@@ -140,7 +143,7 @@ export function Topbar({
                 type="button"
                 onClick={toggle}
                 aria-label="Sua conta"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-soft text-meta font-semibold text-accent-foreground ring-1 ring-inset ring-primary/20 transition-transform duration-fast hover:scale-[1.03]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground text-primary md:bg-primary-soft text-meta font-semibold md:text-accent-foreground ring-1 ring-inset ring-primary/20 transition-transform duration-fast hover:scale-[1.03]"
               >
                 {initials(profile?.name)}
               </button>
