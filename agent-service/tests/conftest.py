@@ -13,9 +13,10 @@ os.environ.setdefault("OPENAI_API_KEY", "sk-test")
 os.environ.setdefault("REDIS_URL", "fake")
 os.environ.setdefault("UAZAPI_BASE_URL", "https://test.uazapi.com")
 os.environ.setdefault("UAZAPI_TOKEN", "test-token")
-os.environ.setdefault("CAKTO_WEBHOOK_SECRET", "test-secret")
+os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_zapwallet")
+os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_test")
 os.environ.setdefault("FREE_TRIAL_DAYS", "7")
-os.environ.setdefault("CHECKOUT_URL", "https://pay.cakto.com.br/teste")
+os.environ.setdefault("APP_BASE_URL", "https://app.zapwallet.test")
 
 from datetime import datetime, timedelta, timezone  # noqa: E402
 
@@ -153,7 +154,7 @@ def sent(monkeypatch):
     monkeypatch.setattr(uazapi_svc, "send_media", lambda *a, **k: True)
     monkeypatch.setattr(guardrails_svc, "check_jailbreak", lambda *a, **k: False)
     monkeypatch.setattr(media_svc, "transcribe_audio", lambda *a, **k: "transcrição de teste")
-    monkeypatch.setattr(media_svc, "describe_image", lambda *a, **k: "comprovante de R$50 no mercado")
+    monkeypatch.setattr(media_svc, "describe_image", lambda *a, **k: "comprovante de 50 € no mercado")
     return outbox
 
 

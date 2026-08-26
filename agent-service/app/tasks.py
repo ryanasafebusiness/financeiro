@@ -208,7 +208,7 @@ def _gating_message() -> str:
     return (
         "Oi! Eu sou o ZapWallet 💚\n"
         "Vi aqui que você ainda não tem um plano ativo. Sem problema!\n"
-        f"É só ativar por aqui e me mandar uma mensagem: {settings_svc.get_checkout_url()}"
+        f"É só ativar por aqui e me mandar uma mensagem: {settings_svc.get_subscribe_url()}"
     )
 
 
@@ -220,7 +220,7 @@ def _gating_state(profile: dict):
     dias · pago esgotado por cota · pago expirado · nunca teve plano. Chaves de
     cooldown distintas p/ não silenciar a transição entre dois estados.
     """
-    url = settings_svc.get_checkout_url()
+    url = settings_svc.get_subscribe_url()
     is_trial = profile.get("plan") == "Trial"
 
     if supabase_svc.is_premium_active(profile):
@@ -269,7 +269,7 @@ def _maybe_send_nudge(profile: dict, sender: str) -> None:
     """
     new_count = int(profile.get("messages_this_month") or 0) + 1
     limit = int(profile.get("message_limit") or 0)
-    url = settings_svc.get_checkout_url()
+    url = settings_svc.get_subscribe_url()
 
     # 1) Cota acabando (trial ou plano pago com limite)
     if limit:

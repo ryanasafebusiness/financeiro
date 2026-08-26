@@ -101,7 +101,7 @@ export type Plan = {
   price: number;
   duration_days: number;
   message_limit: number;
-  cakto_offer_id: string | null;
+  stripe_price_id: string | null;
   active: boolean;
   created_at: string;
 };

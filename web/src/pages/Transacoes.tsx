@@ -1,17 +1,15 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatTile } from "@/components/ui/stat-tile";
+import { categoryIcon } from "@/lib/category-visuals";
 import {
   Dialog,
   DialogHeader,
@@ -19,10 +17,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn, brl, formatDate, formatDateTime } from "@/lib/utils";
+import { cn, money, formatDate, formatDateTime } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Transaction, Category } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -35,6 +34,7 @@ import {
   Inbox,
   Repeat,
   MapPin,
+  SlidersHorizontal,
 } from "lucide-react";
 
 type TxType = "expense" | "income";
@@ -102,6 +102,7 @@ export default function Transacoes() {
   const [monthFilter, setMonthFilter] = useState<string>(monthOptions[0].value);
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  useOpenOnQuery(() => openNew());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
 
@@ -242,7 +243,7 @@ export default function Transacoes() {
   function handleDelete(t: Transaction) {
     if (
       window.confirm(
-        `Excluir esta transação de ${brl(Number(t.amount) || 0)}? Esta ação não pode ser desfeita.`
+        `Excluir esta transação de ${money(Number(t.amount) || 0)}? Esta ação não pode ser desfeita.`
       )
     ) {
       deleteMutation.mutate(t.id);
@@ -261,151 +262,112 @@ export default function Transacoes() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Transações</h1>
-        <p className="text-muted-foreground">
-          Gerencie suas receitas e gastos.
-        </p>
-      </div>
-
-      {/* Resumo */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Receitas
-            </CardTitle>
-            <ArrowUpCircle className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-7 w-28" />
-            ) : (
-              <div className="text-2xl font-bold text-emerald-600">
-                {brl(summary.income)}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Gastos
-            </CardTitle>
-            <ArrowDownCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-7 w-28" />
-            ) : (
-              <div className="text-2xl font-bold text-destructive">
-                {brl(summary.expense)}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Saldo
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-7 w-28" />
-            ) : (
-              <div
-                className={cn(
-                  "text-2xl font-bold",
-                  summary.balance >= 0 ? "text-emerald-600" : "text-destructive"
-                )}
-              >
-                {brl(summary.balance)}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filtros + ação */}
-      <Card className="mb-6">
-        <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="space-y-1.5">
-              <Label htmlFor="filter-type">Tipo</Label>
-              <Select
-                id="filter-type"
-                value={typeFilter}
-                onChange={(e) =>
-                  setTypeFilter(e.target.value as TypeFilter)
-                }
-                className="sm:w-44"
-              >
-                <option value="all">Todos</option>
-                <option value="expense">Gastos</option>
-                <option value="income">Receitas</option>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="filter-month">Mês</Label>
-              <Select
-                id="filter-month"
-                value={monthFilter}
-                onChange={(e) => setMonthFilter(e.target.value)}
-                className="sm:w-52"
-              >
-                {monthOptions.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-
+      <PageHeader
+        title="Transações"
+        description="Gerencie suas receitas e gastos."
+        actions={
           <Button onClick={openNew}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Nova transação
           </Button>
-        </CardContent>
-      </Card>
+        }
+      />
+
+      {/* Resumo do período */}
+      <div className="grid gap-4 sm:grid-cols-3 stagger">
+        <StatTile
+          label="Receitas"
+          value={summary.income}
+          icon={<ArrowUpCircle className="h-4 w-4" />}
+          tone="positive"
+          loading={isLoading}
+        />
+        <StatTile
+          label="Gastos"
+          value={summary.expense}
+          icon={<ArrowDownCircle className="h-4 w-4" />}
+          tone="negative"
+          loading={isLoading}
+        />
+        <StatTile
+          label="Saldo"
+          value={summary.balance}
+          icon={<Wallet className="h-4 w-4" />}
+          tone={summary.balance >= 0 ? "positive" : "negative"}
+          loading={isLoading}
+        />
+      </div>
+
+      {/* Filtros */}
+      <div className="mt-4 flex flex-col gap-3 rounded-card border border-border bg-card px-4 py-3 shadow-sm sm:flex-row sm:items-center">
+        <span className="flex items-center justify-between gap-2 text-meta font-medium text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4" />
+            Filtros
+          </span>
+          <span className="tabular sm:hidden">
+            {isLoading
+              ? "…"
+              : `${transactions.length} ${transactions.length === 1 ? "registro" : "registros"}`}
+          </span>
+        </span>
+        <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+          <Select
+            id="filter-type"
+            aria-label="Tipo"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+            className="h-9 sm:w-40"
+          >
+            <option value="all">Todos os tipos</option>
+            <option value="expense">Gastos</option>
+            <option value="income">Receitas</option>
+          </Select>
+
+          <Select
+            id="filter-month"
+            aria-label="Mês"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="h-9 sm:w-52"
+          >
+            {monthOptions.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <span className="hidden text-label tabular text-muted-foreground sm:block">
+          {isLoading
+            ? "Carregando…"
+            : `${transactions.length} ${transactions.length === 1 ? "registro" : "registros"}`}
+        </span>
+      </div>
 
       {/* Lista */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lançamentos</CardTitle>
-          <CardDescription>
-            {isLoading
-              ? "Carregando..."
-              : `${transactions.length} ${
-                  transactions.length === 1 ? "registro" : "registros"
-                } no período.`}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="mt-4">
+        <div className="px-3 py-3 sm:px-4">
           {isLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
+            <div className="space-y-2 px-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <Inbox className="h-10 w-10 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Nenhuma transação encontrada para os filtros selecionados.
-              </p>
-              <Button variant="outline" onClick={openNew}>
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar a primeira
-              </Button>
-            </div>
+            <EmptyState
+              icon={<Inbox />}
+              title="Nenhuma transação encontrada"
+              description="Não há lançamentos para os filtros selecionados. Ajuste o período ou registre um novo."
+              action={
+                <Button variant="outline" size="sm" onClick={openNew}>
+                  <Plus className="h-4 w-4" />
+                  Adicionar transação
+                </Button>
+              }
+            />
           ) : (
-            <div className="space-y-2">
+            <ul className="divide-y divide-border">
               {transactions.map((t) => {
                 const amount = Number(t.amount) || 0;
                 const isIncome = t.type === "income";
@@ -416,90 +378,96 @@ export default function Transacoes() {
                   : formatDate(t.occurred_on);
                 // Só mostra a categoria na linha de baixo quando ela não vira o título.
                 const showCategory = !!t.category && t.category !== heading;
-                return (
-                  <div
-                    key={t.id}
-                    className="flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/40"
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      {/* Linha de cima: título + badges */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold leading-tight">
-                          {heading}
-                        </span>
-                        <Badge variant={isIncome ? "success" : "secondary"}>
-                          {isIncome ? "Receita" : "Gasto"}
-                        </Badge>
-                        {isRecurring && (
-                          <Badge variant="outline" className="gap-1">
-                            <Repeat className="h-3 w-3" />
-                            recorrente
-                          </Badge>
-                        )}
-                      </div>
+                const Icon = categoryIcon(t.category, t.type);
 
-                      {/* Linha do meio: descrição + local */}
-                      {(t.description || t.location) && (
-                        <div className="space-y-0.5 text-sm text-muted-foreground">
-                          {t.description && <p>{t.description}</p>}
-                          {t.location && (
-                            <p className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{t.location}</span>
-                            </p>
+                return (
+                  <li key={t.id} className="group">
+                    <div className="flex items-start gap-3 rounded-lg px-3 py-3 transition-colors duration-fast hover:bg-muted/60">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                          isIncome ? "bg-positive/10 text-positive" : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-body font-medium leading-tight text-foreground">
+                            {heading}
+                          </span>
+                          {isRecurring && (
+                            <Badge variant="outline" className="gap-1">
+                              <Repeat className="h-3 w-3" />
+                              recorrente
+                            </Badge>
                           )}
                         </div>
-                      )}
 
-                      {/* Linha de baixo: data/hora + categoria */}
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                        <span>{when}</span>
-                        {showCategory && (
-                          <>
-                            <span aria-hidden="true">•</span>
-                            <span>{t.category}</span>
-                          </>
+                        {(t.description || t.location) && (
+                          <div className="space-y-0.5 text-meta text-muted-foreground">
+                            {t.description && <p className="truncate">{t.description}</p>}
+                            {t.location && (
+                              <p className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{t.location}</span>
+                              </p>
+                            )}
+                          </div>
                         )}
+
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-label text-muted-foreground">
+                          <span>{when}</span>
+                          {showCategory && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span className="capitalize">{t.category}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* No mobile o valor fica acima das ações; no desktop, lado a lado. */}
+                      <div className="flex shrink-0 flex-col items-end gap-0.5 sm:flex-row sm:items-start sm:gap-2">
+                        <div
+                          className={cn(
+                            "whitespace-nowrap pt-0.5 text-body font-semibold tabular",
+                            isIncome ? "text-positive" : "text-foreground"
+                          )}
+                        >
+                          {isIncome ? "+" : "\u2212"} {money(amount)}
+                        </div>
+
+                        {/* Ações — discretas, aparecem no hover em telas grandes */}
+                        <div className="-mr-1.5 flex shrink-0 gap-0.5 opacity-100 transition-opacity duration-fast sm:mr-0 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Editar"
+                            onClick={() => openEdit(t)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Excluir"
+                            onClick={() => handleDelete(t)}
+                            disabled={deleteMutation.isPending}
+                            className="hover:text-negative"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Valor */}
-                    <div
-                      className={cn(
-                        "shrink-0 whitespace-nowrap text-lg font-bold",
-                        isIncome ? "text-emerald-600" : "text-destructive"
-                      )}
-                    >
-                      {isIncome ? "+" : "-"}
-                      {brl(amount)}
-                    </div>
-
-                    {/* Ações */}
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Editar"
-                        onClick={() => openEdit(t)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Excluir"
-                        onClick={() => handleDelete(t)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
-        </CardContent>
+        </div>
       </Card>
 
       {/* Dialog de criação/edição */}
@@ -539,7 +507,7 @@ export default function Transacoes() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="form-amount">Valor (R$)</Label>
+            <Label htmlFor="form-amount">Valor (€)</Label>
             <Input
               id="form-amount"
               type="number"

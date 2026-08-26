@@ -58,8 +58,8 @@ def build_context(profile: dict) -> str:
         f"Nome do usuário: {profile.get('name') or 'desconhecido'}",
         f"Data e hora agora: {now.strftime('%d/%m/%Y %H:%M')} ({tz.key})",
         f"Plano: {profile.get('plan') or 'Trial'}",
-        f"Mês atual: receitas R${s['total_income']:.2f}, gastos R${s['total_expense']:.2f}, "
-        f"saldo R${s['balance']:.2f} ({s['count']} lançamentos).",
+        f"Mês atual: receitas {s['total_income']:.2f} €, gastos {s['total_expense']:.2f} €, "
+        f"saldo {s['balance']:.2f} € ({s['count']} lançamentos).",
     ]
     if categories:
         cat_lines = []
@@ -75,13 +75,13 @@ def build_context(profile: dict) -> str:
         )
     if goals:
         gtxt = "; ".join(
-            f"{g['name']} (R${float(g['saved_amount']):.2f}/R${float(g['target_amount']):.2f})"
+            f"{g['name']} ({float(g['saved_amount']):.2f} €/{float(g['target_amount']):.2f} €)"
             for g in goals[:5]
         )
         lines.append(f"Metas ativas: {gtxt}")
     if limits:
         ltxt = "; ".join(
-            f"{l['category']} {l['period']}: R${l['spent']:.2f}/R${l['limit']:.2f}"
+            f"{l['category']} {l['period']}: {l['spent']:.2f} €/{l['limit']:.2f} €"
             + (" (ESTOURADO)" if l["exceeded"] else "")
             for l in limits[:6]
         )
@@ -264,12 +264,14 @@ def _attach(reply: dict, cards: list[str], trace: list[dict]) -> dict:
 
 
 # ── Recibo determinístico de transação (enviado pelo pipeline) ─────────────────
-def _fmt_brl(value) -> str:
+def _fmt_eur(value) -> str:
+    """1234.5 -> '1.234,50 €' (ponto de milhar, vírgula decimal, símbolo ao final)."""
     try:
         n = float(value)
     except (TypeError, ValueError):
-        return "R$ 0,00"
-    return "R$ " + f"{n:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        n = 0.0
+    digits = f"{n:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{digits} €"
 
 
 def _fmt_date(iso) -> str:
@@ -295,7 +297,7 @@ def format_transaction_card(reg: dict) -> str:
     header = "✅ Receita registrada" if is_income else "✅ Gasto registrado"
     money_emoji = "💰" if is_income else "💸"
 
-    lines = [header, f"{money_emoji} {_fmt_brl(reg.get('valor'))}"]
+    lines = [header, f"{money_emoji} {_fmt_eur(reg.get('valor'))}"]
     titulo = (reg.get("titulo") or "").strip()
     if titulo:
         lines.append(f"📌 {titulo}")

@@ -50,11 +50,12 @@ const GROUPS: { title: string; icon: typeof Bot; desc: string; fields: FieldDef[
     ],
   },
   {
-    title: "Cakto (pagamento)",
+    title: "Stripe (pagamento)",
     icon: CreditCard,
-    desc: "Secret do webhook de pagamento. A URL de checkout fica em Configurações.",
+    desc: "Chaves das assinaturas. Os preços de cada plano ficam na página Planos.",
     fields: [
-      { key: "cakto_webhook_secret", label: "Secret do webhook", secret: true, placeholder: "secret...", hint: "Cakto → Configurações → Notificações → Webhooks" },
+      { key: "stripe_secret_key", label: "Secret key", secret: true, placeholder: "sk_live_...", hint: "Stripe → Desenvolvedores → Chaves de API" },
+      { key: "stripe_webhook_secret", label: "Signing secret do webhook", secret: true, placeholder: "whsec_...", hint: "Stripe → Webhooks → seu endpoint → Signing secret" },
     ],
   },
 ];
@@ -84,7 +85,7 @@ export default function AdminIntegracoes() {
       const n = res?.saved?.length ?? 0;
       toast.success(`${n} chave(s) salva(s). Entram em vigor em ~30s.`);
       qc.invalidateQueries({ queryKey: ["admin", "integrations"] });
-      qc.invalidateQueries({ queryKey: ["admin", "cakto-health"] });
+      qc.invalidateQueries({ queryKey: ["admin", "stripe-health"] });
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao salvar"),
   });
@@ -117,21 +118,21 @@ export default function AdminIntegracoes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      <div className="mb-1 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
           <KeyRound className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Integrações</h1>
-          <p className="text-sm text-muted-foreground">
-            Chaves de API do OpenAI, uazapi e Cakto. Alterações entram em vigor sem redeploy.
+          <h1 className="text-page-title font-bold text-foreground">Integrações</h1>
+          <p className="text-meta text-muted-foreground">
+            Chaves de API do OpenAI, uazapi e Stripe. Alterações entram em vigor sem redeploy.
           </p>
         </div>
       </div>
 
-      <Card className="border-emerald-200 bg-emerald-50/40">
+      <Card className="border-positive/20 bg-positive/[0.06]">
         <CardContent className="flex items-start gap-3 py-4">
-          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-positive" />
           <p className="text-sm text-muted-foreground">
             As chaves ficam num cofre no servidor (tabela bloqueada, só o backend acessa) e nunca
             são exibidas por completo. Deixe um campo de segredo em branco para manter o valor atual.

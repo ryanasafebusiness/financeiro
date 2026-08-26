@@ -11,3 +11,4 @@ python-multipart==0.0.17
 python-dateutil==2.9.0.post0
 fpdf2==2.8.1
 fakeredis==2.26.2
+stripe==13.2.0

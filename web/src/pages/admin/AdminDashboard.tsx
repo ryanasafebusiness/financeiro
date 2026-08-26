@@ -14,9 +14,11 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { api, apiUrl } from "@/lib/api";
-import { brl, cn } from "@/lib/utils";
+import { money, cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface AdminStats {
@@ -70,15 +72,15 @@ function MetricCard({
   description?: string;
 }) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-primary" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
-      </CardContent>
+    <Card className="px-5 py-4 surface-interactive">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-meta font-medium text-muted-foreground">{title}</p>
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-soft text-primary">
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className="mt-2 text-metric font-semibold tabular text-foreground">{value}</div>
+      {description ? <p className="mt-0.5 text-label text-muted-foreground">{description}</p> : null}
     </Card>
   );
 }
@@ -86,9 +88,9 @@ function MetricCard({
 function logLevelClass(level: string): string {
   const l = level.toLowerCase();
   if (l.includes("error") || l.includes("erro") || l.includes("fatal")) return "text-destructive";
-  if (l.includes("warn") || l.includes("aviso")) return "text-amber-500";
+  if (l.includes("warn") || l.includes("aviso")) return "text-warning";
   if (l.includes("debug") || l.includes("trace")) return "text-muted-foreground";
-  if (l.includes("info")) return "text-emerald-500";
+  if (l.includes("info")) return "text-positive";
   return "text-foreground";
 }
 
@@ -210,10 +212,10 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Visão geral</h1>
-        <p className="text-muted-foreground">Métricas e atividade do ZapWallet em tempo real.</p>
-      </div>
+      <PageHeader
+        title="Visão geral"
+        description="Métricas e atividade do ZapWallet em tempo real."
+      />
 
       {statsLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 stagger">
           <MetricCard
             title="Usuários"
             value={String(stats?.users ?? 0)}
@@ -254,14 +256,14 @@ export default function AdminDashboard() {
           />
           <MetricCard
             title="Receita"
-            value={brl(Number(stats?.revenue ?? 0))}
+            value={money(Number(stats?.revenue ?? 0))}
             icon={DollarSign}
             description="Faturamento acumulado"
           />
         </div>
       )}
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Mensagens recentes</CardTitle>
@@ -275,22 +277,20 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : messages.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Nenhuma mensagem encontrada.
-              </p>
+              <EmptyState icon={<MessageSquare />} title="Nenhuma mensagem encontrada" />
             ) : (
               <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
                 {messages.map((msg, idx) => (
                   <div
                     key={`${msg.chat}-${msg.created_at}-${idx}`}
-                    className="flex items-start justify-between gap-3 rounded-lg border p-3"
+                    className="flex items-start justify-between gap-3 rounded-lg bg-surface-secondary p-3 transition-colors duration-fast hover:bg-muted"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium">{msg.chat}</span>
+                        <span className="truncate text-meta font-medium">{msg.chat}</span>
                         <MessageBadge message={msg} />
                       </div>
-                      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      <p className="mt-1 line-clamp-2 break-words text-meta text-muted-foreground">
                         {msg.message}
                       </p>
                     </div>
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
           <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
             <div className="space-y-1.5">
               <CardTitle className="flex items-center gap-2">
-                <Radio className={cn("h-4 w-4", connected ? "text-emerald-500" : "text-muted-foreground")} />
+                <Radio className={cn("h-4 w-4", connected ? "text-positive" : "text-muted-foreground")} />
                 Logs ao vivo
               </CardTitle>
               <CardDescription>
@@ -335,16 +335,16 @@ export default function AdminDashboard() {
           <CardContent>
             <pre
               ref={preRef}
-              className="h-[420px] overflow-auto rounded-lg bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-100"
+              className="h-[420px] overflow-auto rounded-lg bg-foreground/[0.04] p-3 font-mono text-xs leading-relaxed text-foreground"
             >
               {logs.length === 0 ? (
-                <span className="text-zinc-500">
+                <span className="text-muted-foreground">
                   {connected ? "Aguardando logs..." : "Nenhum log. Clique em \"Conectar\"."}
                 </span>
               ) : (
                 logs.map((line) => (
                   <div key={line.id} className={logLevelClass(line.level)}>
-                    <span className="text-zinc-500">[{line.level}]</span> {line.text}
+                    <span className="text-muted-foreground">[{line.level}]</span> {line.text}
                   </div>
                 ))
               )}

@@ -37,7 +37,7 @@ def test_finalize_envia_e_registra(db, sent, patch_openai):
 
     # 2 bolhas: o recibo determinístico + o comentário do agente
     assert len(sent) == 2 and all(s[0] == PHONE for s in sent)
-    assert "Gasto registrado" in sent[0][1] and "R$ 80,00" in sent[0][1]
+    assert "Gasto registrado" in sent[0][1] and "80,00 €" in sent[0][1]
     assert sent[1][1] == "Anotado! 🎬"
     assert len(db.rows("transactions")) == 1
     # memória persistida (human + ai) — o recibo NÃO entra na memória
@@ -114,7 +114,7 @@ def test_inbound_sem_plano_envia_checkout(make_db, sent, patch_openai):
     patch_openai([])  # agente não deve ser chamado
     tasks.process_inbound.apply(args=[make_raw("oi")])
 
-    assert len(sent) == 1 and "cakto" in sent[0][1].lower()
+    assert len(sent) == 1 and "/assinatura" in sent[0][1]
 
 
 def test_inbound_sem_plano_nao_registra(make_db, sent, patch_openai):

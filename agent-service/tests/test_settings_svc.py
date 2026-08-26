@@ -55,7 +55,7 @@ def test_cache_segura_por_ttl_e_invalida_no_set(db):
 
 # ── Config do funil (fonte única: app_settings, com fallback ao .env) ──────────
 def test_funnel_defaults_sem_override(db):
-    assert settings_svc.get_checkout_url() == settings.checkout_url
+    assert settings_svc.get_app_base_url() == settings.app_base_url
     assert settings_svc.get_trial_days() == settings.free_trial_days
     assert settings_svc.get_trial_message_limit() == 15
     assert settings_svc.get_nudge_threshold_msgs() == 3
@@ -68,9 +68,11 @@ def test_funnel_override_lido_e_salvo(db):
     assert any(r["key"] == "trial_message_limit" for r in db.rows("app_settings"))
 
 
-def test_funnel_checkout_override(db):
-    settings_svc.set_funnel_setting(settings_svc.CHECKOUT_URL_KEY, "https://pay.cakto.com.br/nova")
-    assert settings_svc.get_checkout_url() == "https://pay.cakto.com.br/nova"
+def test_funnel_base_url_override(db):
+    settings_svc.set_funnel_setting(settings_svc.APP_BASE_URL_KEY, "https://painel.exemplo.com")
+    assert settings_svc.get_app_base_url() == "https://painel.exemplo.com"
+    # o link mandado no WhatsApp deriva da base
+    assert settings_svc.get_subscribe_url() == "https://painel.exemplo.com/assinatura"
 
 
 def test_funnel_chave_invalida_levanta(db):
@@ -88,7 +90,7 @@ def test_funnel_fallback_quando_banco_off(monkeypatch):
         raise RuntimeError("db off")
     monkeypatch.setattr(settings_svc, "get_db", boom)
     assert settings_svc.get_trial_message_limit() == 15
-    assert settings_svc.get_checkout_url() == settings.checkout_url
+    assert settings_svc.get_app_base_url() == settings.app_base_url
 
 
 def test_agente_usa_prompt_do_banco(profile, patch_openai):
@@ -111,7 +113,7 @@ def test_integration_defaults_sem_override(db):
     assert settings_svc.get_openai_model() == settings.openai_model
     assert settings_svc.get_uazapi_base_url() == settings.uazapi_base_url
     assert settings_svc.get_uazapi_token() == settings.uazapi_token
-    assert settings_svc.get_cakto_webhook_secret() == settings.cakto_webhook_secret
+    assert settings_svc.get_stripe_webhook_secret() == settings.stripe_webhook_secret
 
 
 def test_integration_override_lido_e_salvo(db):

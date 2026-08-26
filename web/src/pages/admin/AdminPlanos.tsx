@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogHeader,
@@ -18,7 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { api } from "@/lib/api";
-import { brl } from "@/lib/utils";
+import { money } from "@/lib/utils";
 
 interface Plan {
   id: string;
@@ -26,7 +27,7 @@ interface Plan {
   price: number;
   duration_days: number;
   message_limit: number;
-  cakto_offer_id: string | null;
+  stripe_price_id: string | null;
   active: boolean;
 }
 
@@ -35,12 +36,13 @@ const EMPTY_FORM = {
   price: "",
   duration_days: "30",
   message_limit: "0",
-  cakto_offer_id: "",
+  stripe_price_id: "",
   active: true,
 };
 
-function isPlaceholderOffer(offer: string | null): boolean {
-  return !offer || offer.startsWith("TROQUE_PELO_OFFER_ID");
+/** Um plano só é vendável quando aponta para um Price recorrente da Stripe. */
+function isMissingPrice(priceId: string | null): boolean {
+  return !priceId || !priceId.startsWith("price_");
 }
 
 export default function AdminPlanos() {
@@ -73,7 +75,7 @@ export default function AdminPlanos() {
       price: String(plan.price),
       duration_days: String(plan.duration_days),
       message_limit: String(plan.message_limit),
-      cakto_offer_id: plan.cakto_offer_id ?? "",
+      stripe_price_id: plan.stripe_price_id ?? "",
       active: plan.active,
     });
     setDialogOpen(true);
@@ -130,7 +132,7 @@ export default function AdminPlanos() {
       price,
       duration_days,
       message_limit,
-      cakto_offer_id: form.cakto_offer_id.trim(),
+      stripe_price_id: form.stripe_price_id.trim(),
       active: form.active,
     };
 
@@ -147,13 +149,13 @@ export default function AdminPlanos() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
             <Package className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Planos</h1>
+            <h1 className="text-page-title font-bold text-foreground">Planos</h1>
             <p className="text-sm text-muted-foreground">
-              Gerencie os planos e os offer IDs da Cakto.
+              Gerencie os planos e os preços recorrentes da Stripe.
             </p>
           </div>
         </div>
@@ -170,7 +172,7 @@ export default function AdminPlanos() {
             Planos cadastrados
           </CardTitle>
           <CardDescription>
-            Cada plano precisa do offer ID da Cakto para liberar acesso automaticamente após o pagamento.
+            Cada plano precisa de um Price recorrente da Stripe para liberar acesso automaticamente após o pagamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -181,43 +183,51 @@ export default function AdminPlanos() {
               ))}
             </div>
           ) : plans.length === 0 ? (
-            <div className="py-10 text-center text-muted-foreground">
-              Nenhum plano cadastrado. Clique em "Novo plano" para começar.
-            </div>
+            <EmptyState
+              icon={<Package />}
+              title="Nenhum plano cadastrado"
+              description="Crie o primeiro plano para começar a vender assinaturas."
+              action={
+                <Button size="sm" variant="outline" onClick={openCreate}>
+                  <Plus className="h-4 w-4" />
+                  Novo plano
+                </Button>
+              }
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+              <table className="w-full min-w-[680px] text-meta">
                 <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-3 pr-4 font-medium">Nome</th>
-                    <th className="py-3 pr-4 font-medium">Preço</th>
-                    <th className="py-3 pr-4 font-medium">Dias</th>
-                    <th className="py-3 pr-4 font-medium">Msgs</th>
-                    <th className="py-3 pr-4 font-medium">Offer ID (Cakto)</th>
-                    <th className="py-3 pr-4 font-medium">Status</th>
+                  <tr className="border-b border-border text-left text-label font-medium uppercase tracking-wide text-muted-foreground">
+                    <th className="py-2.5 pr-4 font-medium">Nome</th>
+                    <th className="py-2.5 pr-4 font-medium">Preço</th>
+                    <th className="py-2.5 pr-4 font-medium">Dias</th>
+                    <th className="py-2.5 pr-4 font-medium">Msgs</th>
+                    <th className="py-2.5 pr-4 font-medium">Price ID (Stripe)</th>
+                    <th className="py-2.5 pr-4 font-medium">Status</th>
                     <th className="py-3 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {plans.map((plan) => (
-                    <tr key={plan.id} className="border-b last:border-0 align-middle">
+                    <tr key={plan.id} className="border-b border-border align-middle transition-colors duration-fast last:border-0 hover:bg-muted/50">
                       <td className="py-3 pr-4 font-medium">{plan.name}</td>
-                      <td className="py-3 pr-4 whitespace-nowrap">{brl(Number(plan.price))}</td>
+                      <td className="py-3 pr-4 whitespace-nowrap">{money(Number(plan.price))}</td>
                       <td className="py-3 pr-4">{plan.duration_days}d</td>
                       <td className="py-3 pr-4">
                         {plan.message_limit > 0 ? plan.message_limit : "∞"}
                       </td>
                       <td className="py-3 pr-4">
-                        {isPlaceholderOffer(plan.cakto_offer_id) ? (
-                          <span className="flex items-center gap-1.5 text-amber-600">
+                        {isMissingPrice(plan.stripe_price_id) ? (
+                          <span className="flex items-center gap-1.5 text-warning">
                             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                            <span className="font-mono text-xs">
-                              {plan.cakto_offer_id || "—"}
+                            <span className="font-mono text-label">
+                              {plan.stripe_price_id || "sem price"}
                             </span>
                           </span>
                         ) : (
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {plan.cakto_offer_id}
+                          <span className="font-mono text-label text-muted-foreground">
+                            {plan.stripe_price_id}
                           </span>
                         )}
                       </td>
@@ -260,8 +270,8 @@ export default function AdminPlanos() {
           <DialogTitle>{editTarget ? "Editar plano" : "Novo plano"}</DialogTitle>
           <DialogDescription>
             {editTarget
-              ? "Altere as configurações. O offer ID deve corresponder ao ID do produto na Cakto."
-              : "Preencha os dados. Use o offer ID do produto cadastrado na Cakto."}
+              ? "Altere as configurações. O Price ID deve ser o de um preço recorrente na Stripe."
+              : "Preencha os dados. Use o Price ID de um preço recorrente criado na Stripe."}
           </DialogDescription>
         </DialogHeader>
 
@@ -278,7 +288,7 @@ export default function AdminPlanos() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="plan-price">Preço (R$)</Label>
+              <Label htmlFor="plan-price">Preço (€)</Label>
               <Input
                 id="plan-price"
                 type="number"
@@ -315,16 +325,17 @@ export default function AdminPlanos() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="plan-offer">Offer ID (Cakto)</Label>
+            <Label htmlFor="plan-price-id">Price ID (Stripe)</Label>
             <Input
-              id="plan-offer"
-              value={form.cakto_offer_id}
-              onChange={(e) => setForm({ ...form, cakto_offer_id: e.target.value })}
-              placeholder="Ex: abc123def456"
-              className="font-mono text-sm"
+              id="plan-price-id"
+              value={form.stripe_price_id}
+              onChange={(e) => setForm({ ...form, stripe_price_id: e.target.value })}
+              placeholder="price_1AbCdEf..."
+              className="font-mono text-meta"
             />
-            <p className="text-xs text-muted-foreground">
-              Encontre em Cakto → Produtos → seu produto → Oferta → ID da oferta
+            <p className="text-label text-muted-foreground">
+              Stripe → Catálogo de produtos → seu produto → Preço → copiar o ID.
+              Precisa ser um preço <strong>recorrente</strong> em EUR.
             </p>
           </div>
 

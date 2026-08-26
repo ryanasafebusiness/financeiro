@@ -87,93 +87,103 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="items-center text-center">
-          <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600">
-            <Wallet className="h-7 w-7 text-white" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-10">
+      {/* Spotlight sutil ao fundo — profundidade sem ruído. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(60rem_40rem_at_50%_-10%,hsl(var(--primary)/0.10),transparent_70%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-strong to-transparent"
+      />
+
+      <div className="relative w-full max-w-[26rem] animate-fade-up">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-primary text-primary-foreground shadow-md">
+            <Wallet className="h-6 w-6" />
           </div>
-          <CardTitle className="text-2xl">ZapWallet</CardTitle>
-          <CardDescription>Suas finanças no WhatsApp</CardDescription>
-        </CardHeader>
+          <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">ZapWallet</h1>
+          <p className="mt-1 text-body text-muted-foreground">Suas finanças, direto no WhatsApp.</p>
+        </div>
 
-        <CardContent>
-          {step === "phone" ? (
-            <form onSubmit={handleRequestOtp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="(85) 99999-9999"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={loading}
-                  autoFocus
-                />
-                <p className="text-xs text-muted-foreground">
-                  Inclua o DDD. Enviaremos um código pelo WhatsApp.
-                </p>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar código
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Código de verificação</Label>
-                <Input
-                  id="code"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoComplete="one-time-code"
-                  placeholder="000000"
-                  className="text-center text-lg tracking-[0.5em]"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  disabled={loading}
-                  autoFocus
-                />
-                <p className="text-xs text-muted-foreground">
-                  Digite o código de 6 dígitos enviado para o seu WhatsApp.
-                </p>
-              </div>
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle>{step === "phone" ? "Entrar" : "Confirme o código"}</CardTitle>
+            <CardDescription>
+              {step === "phone"
+                ? "Informe seu telefone e enviaremos um código de acesso."
+                : `Enviamos um código de 6 dígitos para o seu WhatsApp.`}
+            </CardDescription>
+          </CardHeader>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Entrar
-              </Button>
-
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBack}
-                  disabled={loading}
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Voltar
+          <CardContent>
+            {step === "phone" ? (
+              <form onSubmit={handleRequestOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="(85) 99999-9999"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                  />
+                  <p className="text-label text-muted-foreground">
+                    Inclua o DDD. Enviaremos um código pelo WhatsApp.
+                  </p>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Enviar código
                 </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  onClick={handleResend}
-                  disabled={loading}
-                >
-                  Reenviar código
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">Código de verificação</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    className="h-14 text-center text-2xl font-semibold tracking-[0.4em] tabular"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Entrar
                 </Button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
+
+                <div className="flex items-center justify-between">
+                  <Button type="button" variant="ghost" size="sm" onClick={handleBack} disabled={loading}>
+                    <ArrowLeft className="h-4 w-4" />
+                    Voltar
+                  </Button>
+                  <Button type="button" variant="link" size="sm" onClick={handleResend} disabled={loading}>
+                    Reenviar código
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="mt-6 text-center text-label text-muted-foreground">
+          Ao continuar, você concorda em receber mensagens do ZapWallet no WhatsApp.
+        </p>
+      </div>
     </div>
   );
 }

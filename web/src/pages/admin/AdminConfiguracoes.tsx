@@ -13,26 +13,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 
 interface FunnelSettings {
-  checkout_url: string;
+  app_base_url: string;
   trial_days: number;
   trial_message_limit: number;
   nudge_threshold_msgs: number;
   nudge_threshold_days: number;
 }
 
-interface CaktoHealth {
+interface StripeHealth {
+  secret_key_set: boolean;
+  livemode: boolean;
   webhook_secret_set: boolean;
-  checkout_url_set: boolean;
-  checkout_url: string;
+  webhook_url: string;
+  app_base_url: string;
   plans_active: number;
-  plans_missing_offer: string[];
+  plans_missing_price: string[];
   trial_days: number;
   trial_message_limit: number;
   ok: boolean;
 }
 
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
-const CAKTO_WEBHOOK_URL = `${API_BASE}/webhooks/cakto`;
+const STRIPE_WEBHOOK_URL = `${API_BASE}/webhooks/stripe`;
 
 function CopyButton({ text }: { text: string }) {
   return (
@@ -61,13 +63,13 @@ function HealthRow({
   return (
     <div className="flex items-start gap-3">
       {ok ? (
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-positive" />
       ) : (
         <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
       )}
-      <div>
-        <p className="text-sm font-medium">{label}</p>
-        {detail && <p className="text-xs text-muted-foreground">{detail}</p>}
+      <div className="min-w-0">
+        <p className="text-meta font-medium">{label}</p>
+        {detail && <p className="break-words text-label text-muted-foreground">{detail}</p>}
         {children}
       </div>
     </div>
@@ -78,9 +80,9 @@ export default function AdminConfiguracoes() {
   const qc = useQueryClient();
   const [form, setForm] = useState<FunnelSettings | null>(null);
 
-  const { data: health, isLoading: healthLoading } = useQuery<CaktoHealth>({
-    queryKey: ["admin", "cakto-health"],
-    queryFn: () => api.adminGet("/api/cakto/health"),
+  const { data: health, isLoading: healthLoading } = useQuery<StripeHealth>({
+    queryKey: ["admin", "stripe-health"],
+    queryFn: () => api.adminGet("/api/stripe/health"),
   });
 
   const { data: funnel, isLoading: funnelLoading } = useQuery<FunnelSettings>({
@@ -98,7 +100,7 @@ export default function AdminConfiguracoes() {
     onSuccess: () => {
       toast.success("Configurações salvas! Entram em vigor em até ~30s.");
       qc.invalidateQueries({ queryKey: ["admin", "funnel-settings"] });
-      qc.invalidateQueries({ queryKey: ["admin", "cakto-health"] });
+      qc.invalidateQueries({ queryKey: ["admin", "stripe-health"] });
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao salvar"),
   });
@@ -108,35 +110,35 @@ export default function AdminConfiguracoes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      <div className="mb-1 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
           <Settings className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Configurações</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold text-foreground">Configurações</h1>
+          <p className="text-meta text-muted-foreground">
             Checkout, trial e nudges de conversão.
           </p>
         </div>
       </div>
 
-      {/* Card de saúde da integração Cakto */}
+      {/* Card de saúde da integração Stripe */}
       <Card
         className={
           health?.ok
-            ? "border-emerald-200 bg-emerald-50/40"
-            : "border-amber-200 bg-amber-50/40"
+            ? "border-positive/20 bg-positive/[0.06]"
+            : "border-warning/20 bg-warning/[0.06]"
         }
       >
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
               {health?.ok ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <CheckCircle2 className="h-5 w-5 text-positive" />
               ) : (
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <AlertTriangle className="h-5 w-5 text-warning" />
               )}
-              Integração Cakto
+              Integração Stripe
             </CardTitle>
             {healthLoading ? (
               <Skeleton className="h-6 w-24" />
@@ -159,45 +161,51 @@ export default function AdminConfiguracoes() {
             </div>
           ) : health ? (
             <div className="space-y-3">
-              {/* URL que o comprador precisa colar no painel da Cakto */}
+              {/* URL que precisa ser registrada como endpoint na Stripe */}
               <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-                <p className="mb-1 font-medium">URL do webhook (registre na Cakto)</p>
+                <p className="mb-1 font-medium">URL do webhook (registre na Stripe)</p>
                 <div className="flex items-center gap-1">
-                  <code className="break-all text-xs text-primary">{CAKTO_WEBHOOK_URL}</code>
-                  <CopyButton text={CAKTO_WEBHOOK_URL} />
+                  <code className="break-all text-xs text-primary">{STRIPE_WEBHOOK_URL}</code>
+                  <CopyButton text={STRIPE_WEBHOOK_URL} />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  No painel da Cakto: <strong>Configurações → Notificações → Webhooks</strong> → cole
-                  a URL acima e marque todos os eventos.
+                  Na Stripe: <strong>Desenvolvedores → Webhooks → Adicionar endpoint</strong> → cole
+                  a URL acima e assine <code>checkout.session.completed</code>,{" "}
+                  <code>invoice.paid</code> e <code>customer.subscription.deleted</code>.
                 </p>
               </div>
 
               <HealthRow
+                ok={health.secret_key_set}
+                label={
+                  health.secret_key_set && health.livemode
+                    ? "Secret key configurada (modo LIVE)"
+                    : "Secret key configurada"
+                }
+                detail={
+                  health.secret_key_set
+                    ? undefined
+                    : "Cole a chave em Admin → Integrações (Stripe → Secret key)"
+                }
+              />
+              <HealthRow
                 ok={health.webhook_secret_set}
-                label="Webhook secret configurado"
+                label="Signing secret do webhook configurado"
                 detail={
                   health.webhook_secret_set
-                    ? "CAKTO_WEBHOOK_SECRET está no .env"
-                    : "Adicione CAKTO_WEBHOOK_SECRET no .env do servidor e reinicie"
+                    ? undefined
+                    : "Crie o endpoint na Stripe e cole o whsec_... em Admin → Integrações"
                 }
               >
                 {!health.webhook_secret_set && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    O secret fica em <strong>Cakto → Configurações → Notificações → Webhooks</strong>{" "}
-                    (campo "Chave secreta"). Copie e cole em <code>CAKTO_WEBHOOK_SECRET=...</code> no{" "}
-                    <code>.env</code> do servidor.
+                  <p className="mt-1 text-label text-muted-foreground">
+                    Na Stripe, vá em <strong>Desenvolvedores → Webhooks → Adicionar endpoint</strong>,
+                    use a URL abaixo e assine os eventos{" "}
+                    <code>checkout.session.completed</code>, <code>invoice.paid</code> e{" "}
+                    <code>customer.subscription.deleted</code>.
                   </p>
                 )}
               </HealthRow>
-              <HealthRow
-                ok={health.checkout_url_set}
-                label="URL de checkout configurada"
-                detail={
-                  health.checkout_url_set
-                    ? health.checkout_url
-                    : "Altere a URL abaixo para o link de checkout real da Cakto"
-                }
-              />
               <HealthRow
                 ok={health.plans_active > 0}
                 label={`${health.plans_active} plano(s) ativo(s)`}
@@ -208,11 +216,11 @@ export default function AdminConfiguracoes() {
                 }
               />
               <HealthRow
-                ok={health.plans_missing_offer.length === 0}
-                label="Offer IDs preenchidos"
+                ok={health.plans_missing_price.length === 0}
+                label="Price IDs da Stripe preenchidos"
                 detail={
-                  health.plans_missing_offer.length > 0
-                    ? `Faltando em: ${health.plans_missing_offer.join(", ")}`
+                  health.plans_missing_price.length > 0
+                    ? `Faltando em: ${health.plans_missing_price.join(", ")}`
                     : "Todos os planos ativos têm offer ID cadastrado"
                 }
               />
@@ -241,18 +249,19 @@ export default function AdminConfiguracoes() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="checkout-url">URL de checkout</Label>
+              <Label htmlFor="app-base-url">URL pública do painel</Label>
               <Input
-                id="checkout-url"
-                value={form.checkout_url}
+                id="app-base-url"
+                value={form.app_base_url}
                 onChange={(e) =>
-                  setForm({ ...form, checkout_url: e.target.value })
+                  setForm({ ...form, app_base_url: e.target.value })
                 }
-                placeholder="https://pay.cakto.com.br/..."
+                placeholder="https://app.seudominio.com"
               />
-              <p className="text-xs text-muted-foreground">
-                Link enviado quando o usuário atinge o limite do trial ou do
-                plano.
+              <p className="text-label text-muted-foreground">
+                Base dos retornos do checkout da Stripe e do link{" "}
+                <code>/assinatura</code> que o agente manda no WhatsApp quando o
+                trial acaba.
               </p>
             </div>
 

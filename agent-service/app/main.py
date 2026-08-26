@@ -15,7 +15,7 @@ from app.api.router import router as api_router
 from app.config import settings
 from app.tasks import finalize_batch_payload, process_inbound, process_inbound_payload
 from app.services import finance_svc, supabase_svc, vercel_queue_svc
-from app.webhooks.cakto import router as cakto_router
+from app.webhooks.stripe_webhook import router as stripe_router
 
 # Handler de logs do admin antes do basicConfig
 _admin_handler = _log_handler.AdminLogHandler()
@@ -35,7 +35,7 @@ app.add_middleware(
 
 app.include_router(api_router)
 app.include_router(admin_router)
-app.include_router(cakto_router)
+app.include_router(stripe_router)
 
 
 @app.post("/webhook")

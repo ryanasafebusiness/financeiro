@@ -85,8 +85,8 @@ def test_put_integrations_tudo_vazio_400(db):
     assert e.value.status_code == 400
 
 
-def test_cakto_health_le_secret_do_painel(db):
+def test_stripe_health_le_secret_do_painel(db):
     # Sem secret no .env de teste? há ("test-secret"). Com override pelo painel:
-    settings_svc.set_integration_setting(settings_svc.CAKTO_WEBHOOK_SECRET_KEY, "novo-secret")
-    res = admin_router.cakto_health(_admin={})
+    settings_svc.set_integration_setting(settings_svc.STRIPE_WEBHOOK_SECRET_KEY, "whsec_novo")
+    res = admin_router.stripe_health(_admin={})
     assert res["webhook_secret_set"] is True

@@ -10,11 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { brl, formatDate } from "@/lib/utils";
+import { money, cn, formatDate } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RecurringTransaction, Frequency, Category } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 
 const FREQ_LABEL: Record<Frequency, string> = {
   daily: "Diário", weekly: "Semanal", monthly: "Mensal", yearly: "Anual",
@@ -73,6 +76,7 @@ export default function Recorrentes() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  useOpenOnQuery(() => { setForm(empty); setOpen(true); });
   const [form, setForm] = useState<FormState>(empty);
 
   const { data: categories } = useQuery({
@@ -177,17 +181,15 @@ export default function Recorrentes() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Recorrentes</h1>
-          <p className="text-muted-foreground">
-            Lançamentos que se repetem sozinhos (ex.: salário todo dia 15, aluguel todo dia 10).
-          </p>
-        </div>
-        <Button onClick={() => { setForm(empty); setOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" /> Nova recorrência
-        </Button>
-      </div>
+      <PageHeader
+        title="Recorrentes"
+        description="Lançamentos que se repetem sozinhos (ex.: salário todo dia 15, aluguel todo dia 10)."
+        actions={
+          <Button onClick={() => { setForm(empty); setOpen(true); }}>
+            <Plus className="h-4 w-4" /> Nova recorrência
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -195,42 +197,62 @@ export default function Recorrentes() {
         </div>
       ) : !items || items.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <div className="rounded-full bg-primary/10 p-3"><Repeat className="h-6 w-6 text-primary" /></div>
-            <p className="font-medium">Nenhuma recorrência ainda</p>
-            <p className="text-sm text-muted-foreground">
-              Crie uma para seu salário, aluguel, assinatura… e o ZapWallet lança sozinho no dia certo.
-            </p>
-            <Button onClick={() => { setForm(empty); setOpen(true); }}>
-              <Plus className="mr-2 h-4 w-4" /> Criar primeira
-            </Button>
-          </CardContent>
+          <EmptyState
+            icon={<Repeat />}
+            title="Nenhuma recorrência ainda"
+            description="Crie uma para seu salário, aluguel, assinatura… e o ZapWallet lança sozinho no dia certo."
+            action={
+              <Button onClick={() => { setForm(empty); setOpen(true); }}>
+                <Plus className="h-4 w-4" /> Criar primeira
+              </Button>
+            }
+          />
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 stagger">
           {items.map((r) => {
             const income = r.type === "income";
             return (
-              <Card key={r.id} className={r.active ? "" : "opacity-60"}>
+              <Card
+                key={r.id}
+                className={cn("flex flex-col surface-interactive", !r.active && "opacity-60")}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <CardTitle className="flex items-center gap-2 truncate">
-                        {income ? <TrendingUp className="h-4 w-4 text-emerald-600" />
-                                : <TrendingDown className="h-4 w-4 text-destructive" />}
-                        {r.title}
-                      </CardTitle>
-                      <CardDescription>{rule(r)} · {FREQ_LABEL[r.frequency]}</CardDescription>
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span
+                        className={cn(
+                          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+                          income ? "bg-positive/10 text-positive" : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {income ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      </span>
+                      <div className="min-w-0">
+                        <CardTitle className="truncate">{r.title}</CardTitle>
+                        <CardDescription className="mt-0.5">
+                          {rule(r)} · {FREQ_LABEL[r.frequency]}
+                        </CardDescription>
+                      </div>
                     </div>
                     <Badge variant={r.active ? "success" : "secondary"}>{r.active ? "Ativa" : "Pausada"}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-1">
-                  <p className={`text-xl font-bold ${income ? "text-emerald-600" : "text-destructive"}`}>
-                    {income ? "+" : "-"} {brl(r.amount)}
+                <CardContent className="flex-1 space-y-1">
+                  <p
+                    className={cn(
+                      "text-[1.375rem] font-semibold tracking-tight tabular",
+                      income ? "text-positive" : "text-foreground"
+                    )}
+                  >
+                    {income ? "+" : "\u2212"} {money(r.amount)}
                   </p>
-                  {r.category && <p className="text-sm text-muted-foreground">{r.category}</p>}
-                  <p className="text-xs text-muted-foreground">Próxima: {formatDate(r.next_run)}</p>
+                  {r.category && (
+                    <p className="text-meta capitalize text-muted-foreground">{r.category}</p>
+                  )}
+                  <p className="text-label text-muted-foreground">
+                    Próxima: {formatDate(r.next_run)}
+                  </p>
                 </CardContent>
                 <CardFooter className="gap-2">
                   <Button variant="outline" size="sm" onClick={() => toggle.mutate(r)}>
@@ -240,7 +262,7 @@ export default function Recorrentes() {
                   <Button variant="ghost" size="sm" onClick={() => openEdit(r)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                  <Button variant="ghost" size="sm" className="text-negative hover:bg-negative/10 hover:text-negative"
                           onClick={() => remove.mutate(r.id)} disabled={remove.isPending}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>

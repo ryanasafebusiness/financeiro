@@ -26,7 +26,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <AuthProvider>
           <App />
-          <Toaster position="top-center" richColors />
+          <Toaster
+            position="top-center"
+            richColors
+            toastOptions={{
+              style: {
+                borderRadius: "var(--radius)",
+                boxShadow: "var(--shadow-md)",
+              },
+            }}
+          />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

@@ -39,9 +39,11 @@ class Settings(BaseSettings):
     queue_bridge_secret: str = ""
     cron_secret: str = ""
 
-    # ── Cakto ──────────────────────────────────────────────────────────────
-    cakto_webhook_secret: str = ""
-    checkout_url: str = "https://pay.cakto.com.br/sua-oferta"
+    # ── Stripe ─────────────────────────────────────────────────────────────
+    stripe_secret_key: str = ""        # sk_live_... / sk_test_...
+    stripe_webhook_secret: str = ""    # whsec_... (assinatura do webhook)
+    # URL pública do painel — base dos retornos de sucesso/cancelamento do checkout.
+    app_base_url: str = "http://localhost:8080"
 
     # ── Admin ────────────────────────────────────────────────────────────────
     admin_email: str = ""

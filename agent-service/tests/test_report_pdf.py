@@ -56,9 +56,9 @@ def test_pdf_trunca_muitos_lancamentos():
     assert bytes(pdf[:5]) == b"%PDF-"
 
 
-def test_brl_formatacao():
-    assert report_pdf_svc._brl(1234.5) == "R$ 1.234,50"
-    assert report_pdf_svc._brl(-50) == "-R$ 50,00"
+def test_eur_formatacao():
+    assert report_pdf_svc._eur(1234.5) == "1.234,50 €"
+    assert report_pdf_svc._eur(-50) == "-50,00 €"
 
 
 def test_txt_descarta_emoji_mantem_acento():

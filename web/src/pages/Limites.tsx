@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/select";
 import {
   Dialog,
@@ -21,10 +23,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { cn, brl } from "@/lib/utils";
+import { cn, money } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { SpendingLimit, Transaction, Category } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Target, AlertTriangle } from "lucide-react";
@@ -194,6 +197,8 @@ export default function Limites() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  useOpenOnQuery(() => openNew());
+
   const openNew = () => {
     setForm(emptyForm);
     setDialogOpen(true);
@@ -218,18 +223,16 @@ export default function Limites() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Limites</h1>
-          <p className="text-muted-foreground">
-            Defina limites de gasto por categoria e acompanhe seu progresso.
-          </p>
-        </div>
-        <Button onClick={openNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo limite
-        </Button>
-      </div>
+      <PageHeader
+        title="Limites"
+        description="Defina limites de gasto por categoria e acompanhe seu progresso."
+        actions={
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4" />
+            Novo limite
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -249,24 +252,20 @@ export default function Limites() {
         </div>
       ) : !limits || limits.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-            <div className="rounded-full bg-primary/10 p-3">
-              <Target className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">Nenhum limite cadastrado</p>
-              <p className="text-sm text-muted-foreground">
-                Crie um limite para controlar seus gastos por categoria.
-              </p>
-            </div>
-            <Button onClick={openNew}>
-              <Plus className="mr-2 h-4 w-4" />
-              Criar primeiro limite
-            </Button>
-          </CardContent>
+          <EmptyState
+            icon={<Target />}
+            title="Nenhum limite cadastrado"
+            description="Crie um limite para controlar seus gastos por categoria e receber avisos antes de estourar."
+            action={
+              <Button onClick={openNew}>
+                <Plus className="h-4 w-4" />
+                Criar primeiro limite
+              </Button>
+            }
+          />
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 stagger">
           {limits.map((limit) => {
             const spent = Number(limit.spent);
             const total = Number(limit.limit_amount);
@@ -284,7 +283,7 @@ export default function Limites() {
               limit.category === "geral" ? "Geral" : capitalize(limit.category);
 
             return (
-              <Card key={limit.id} className="flex flex-col">
+              <Card key={limit.id} className="flex flex-col surface-interactive">
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -299,24 +298,24 @@ export default function Limites() {
                     <Badge variant={badgeVariant}>{badgeText}</Badge>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 space-y-3">
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="font-semibold">{brl(spent)}</span>
-                    <span className="text-muted-foreground">
-                      de {brl(total)}
+                <CardContent className="flex-1 space-y-2.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[1.375rem] font-semibold tracking-tight tabular text-foreground">
+                      {money(spent)}
                     </span>
+                    <span className="text-meta tabular text-muted-foreground">de {money(total)}</span>
                   </div>
                   <Progress value={clampedPct} />
-                  <p
-                    className={cn(
-                      "text-sm",
-                      over ? "text-destructive" : "text-emerald-600"
-                    )}
-                  >
-                    {over
-                      ? `${brl(Math.abs(remaining))} acima do limite`
-                      : `${brl(remaining)} restante`}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 text-label">
+                    <span className="font-medium tabular text-muted-foreground">
+                      {Math.round(pct)}% usado
+                    </span>
+                    <span className={cn("font-medium tabular", over ? "text-negative" : "text-positive")}>
+                      {over
+                        ? `${money(Math.abs(remaining))} acima do limite`
+                        : `${money(remaining)} restante`}
+                    </span>
+                  </div>
                 </CardContent>
                 <CardFooter className="gap-2">
                   <Button
@@ -330,7 +329,7 @@ export default function Limites() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:text-destructive"
+                    className="text-negative hover:bg-negative/10 hover:text-negative"
                     onClick={() => deleteMutation.mutate(limit.id)}
                     disabled={deleteMutation.isPending}
                   >

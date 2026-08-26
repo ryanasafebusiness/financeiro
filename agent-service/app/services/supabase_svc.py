@@ -302,11 +302,19 @@ def append_memory(session_id: str, user_input: str, ai_output: str, tool_calls: 
     get_db().table("chat_histories").insert(rows).execute()
 
 
-# ── Planos / pagamentos (Cakto) ────────────────────────────────────────────────
-def get_plan_by_offer(offer_id: str) -> dict | None:
-    if not offer_id:
+# ── Planos / pagamentos (Stripe) ───────────────────────────────────────────────
+def get_plan_by_price(price_id: str) -> dict | None:
+    """Plano ligado a um Price da Stripe (price_...)."""
+    if not price_id:
         return None
-    res = get_db().table("plans").select("*").eq("cakto_offer_id", offer_id).limit(1).execute()
+    res = get_db().table("plans").select("*").eq("stripe_price_id", price_id).limit(1).execute()
+    return res.data[0] if res.data else None
+
+
+def get_plan_by_id(plan_id: str) -> dict | None:
+    if not plan_id:
+        return None
+    res = get_db().table("plans").select("*").eq("id", plan_id).limit(1).execute()
     return res.data[0] if res.data else None
 
 
@@ -332,7 +340,7 @@ def delete_plan(plan_id: str) -> None:
 
 
 def record_payment(payload: dict) -> None:
-    """Insere o pagamento (dedup via unique (cakto_transaction_id, event))."""
+    """Insere o pagamento (dedup via unique (stripe_event_id, event))."""
     try:
         get_db().table("payments").insert(payload).execute()
     except Exception as e:

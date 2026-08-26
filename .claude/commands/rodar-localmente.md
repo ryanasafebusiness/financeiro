@@ -48,7 +48,8 @@ Variáveis a verificar:
 | `OPENAI_API_KEY` | platform.openai.com/api-keys | não (pode configurar depois pelo painel admin) |
 | `UAZAPI_BASE_URL` | Painel uazapi → sua instância → URL | para WhatsApp funcionar |
 | `UAZAPI_TOKEN` | Painel uazapi → sua instância → token | para WhatsApp funcionar |
-| `CAKTO_WEBHOOK_SECRET` | Cakto → Configurações → Webhooks → secret | para pagamentos |
+| `STRIPE_SECRET_KEY` | Stripe → Desenvolvedores → Chaves de API | para pagamentos |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Desenvolvedores → Webhooks → Signing secret | para pagamentos |
 | `EMAIL_DOMAIN` | Domínio fictício dos e-mails OTP (ex: `zapwallet.app`) | não (padrão já funciona) |
 
 ### 2c. Se houver pendentes: colete os valores do usuário
@@ -66,7 +67,8 @@ SUPABASE_ANON_KEY=       ← Supabase → Settings → API → anon / public key
 OPENAI_API_KEY=          ← platform.openai.com/api-keys  (ou deixe em branco — configura depois pelo painel admin)
 UAZAPI_BASE_URL=         ← URL da instância uazapi, ex: https://xxx.uazapi.com
 UAZAPI_TOKEN=            ← Token da instância uazapi
-CAKTO_WEBHOOK_SECRET=    ← Cakto → Configurações → Webhooks → secret  (pode deixar em branco agora)
+STRIPE_SECRET_KEY=       ← Stripe → Desenvolvedores → Chaves de API   (pode deixar em branco agora)
+STRIPE_WEBHOOK_SECRET=   ← Stripe → Desenvolvedores → Webhooks → signing  (pode deixar em branco agora)
 
 Responda no formato CHAVE=valor, uma por linha.
 ```

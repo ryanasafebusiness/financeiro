@@ -34,7 +34,7 @@ def describe_image(msg_id: str, *, base_url: str = "", token: str = "") -> str:
                     {"type": "text", "text": (
                         "Esta imagem provavelmente é um comprovante, nota fiscal, cupom ou print "
                         "de transação financeira. Descreva objetivamente o que vê e, se houver, "
-                        "extraia: valor total (R$), estabelecimento/descrição e data. "
+                        "extraia: valor total (em €), estabelecimento/descrição e data. "
                         "Se não for financeiro, descreva brevemente."
                     )},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},

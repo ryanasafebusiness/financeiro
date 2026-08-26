@@ -5,10 +5,31 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Formata um número como BRL. */
-export function brl(value: number | string | null | undefined): string {
-  const n = typeof value === "string" ? parseFloat(value) : value ?? 0;
-  return (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/* ------------------------------------------------------------------
+   Moeda — ponto único de formatação do app.
+   Formato: "1.234,56 €" (símbolo depois, ponto de milhar, vírgula decimal).
+   Para trocar de moeda, mexa só aqui.
+   ------------------------------------------------------------------ */
+
+export const CURRENCY = {
+  code: "EUR",
+  symbol: "€",
+  /** Locale usado só para agrupar os dígitos (pt-BR = 1.234,56, igual ao padrão europeu). */
+  numberLocale: "pt-BR",
+} as const;
+
+/** Espaço fino inquebrável: o símbolo nunca se separa do número na quebra de linha. */
+const NBSP = "\u00A0";
+
+/** Formata um número como euro: 1234.5 -> "1.234,50 €". */
+export function money(value: number | string | null | undefined): string {
+  const parsed = typeof value === "string" ? parseFloat(value) : value ?? 0;
+  const n = Number.isFinite(parsed as number) ? (parsed as number) : 0;
+  const digits = n.toLocaleString(CURRENCY.numberLocale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return `${digits}${NBSP}${CURRENCY.symbol}`;
 }
 
 /** 'YYYY-MM-DD' -> 'DD/MM/YYYY' (sem fuso). */

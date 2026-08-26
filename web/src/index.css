@@ -2,48 +2,266 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   ZapWallet — Design System
+   Tokens globais. Nenhuma cor deve ser hardcoded nos componentes:
+   sempre usar as classes do Tailwind mapeadas para estes tokens.
+   Cores em triplet HSL para o Tailwind aplicar /alpha (ex.: bg-primary/10).
+   ------------------------------------------------------------------ */
+
 @layer base {
   :root {
-    --background: 150 20% 99%;
-    --foreground: 160 25% 12%;
+    /* ── Superfícies ── */
+    --background: 120 7% 97%;          /* #F7F8F7 */
+    --surface: 0 0% 100%;              /* #FFFFFF */
+    --surface-secondary: 150 14% 97%;
     --card: 0 0% 100%;
-    --card-foreground: 160 25% 12%;
-    --primary: 152 60% 40%;          /* verde ZapWallet */
+    --card-foreground: 146 17% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 146 17% 8%;
+
+    /* ── Texto ── */
+    --foreground: 146 17% 8%;          /* #111814 */
+    --muted: 150 12% 96%;
+    --muted-foreground: 145 5% 43%;    /* #68746D */
+
+    /* ── Marca ── */
+    --primary: 155 77% 37%;            /* #16A66A */
+    --primary-hover: 156 76% 30%;      /* #128557 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 152 30% 95%;
-    --secondary-foreground: 160 25% 18%;
-    --muted: 150 16% 95%;
-    --muted-foreground: 160 10% 42%;
-    --accent: 152 40% 92%;
-    --accent-foreground: 160 25% 18%;
-    --destructive: 0 72% 51%;
+    --primary-soft: 150 50% 95%;       /* #EAF8F1 */
+
+    --secondary: 150 14% 96%;
+    --secondary-foreground: 146 17% 14%;
+    --accent: 150 50% 95%;
+    --accent-foreground: 156 76% 26%;
+
+    /* ── Semânticas ── */
+    --positive: 155 72% 33%;
+    --negative: 358 55% 52%;           /* vermelho elegante, pouco saturado */
+    --warning: 33 82% 46%;
+    --info: 214 70% 50%;
+    --destructive: 358 55% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 150 16% 88%;
-    --input: 150 16% 88%;
-    --ring: 152 60% 40%;
-    --radius: 0.75rem;
+
+    /* ── Traços ── */
+    --border: 150 6% 91%;              /* ~rgba(17,24,20,.08) sobre branco */
+    --border-strong: 150 7% 85%;
+    --input: 150 6% 89%;
+    --ring: 155 77% 37%;
+
+    /* ── Dataviz (categorias) ── */
+    --chart-1: 155 66% 40%;
+    --chart-2: 200 72% 47%;
+    --chart-3: 38 88% 55%;
+    --chart-4: 265 58% 62%;
+    --chart-5: 176 62% 40%;
+    --chart-6: 12 78% 62%;
+    --chart-7: 226 62% 62%;
+    --chart-8: 84 52% 45%;
+
+    /* ── Raios ── */
+    --radius: 0.875rem;                /* 14px — base de inputs/botões */
+    --radius-card: 1.25rem;            /* 20px — cards grandes */
+    --radius-pill: 999px;
+
+    /* ── Sombras (extremamente sutis) ── */
+    --shadow-xs: 0 1px 2px rgba(17, 24, 20, 0.03);
+    --shadow-sm: 0 1px 2px rgba(17, 24, 20, 0.03), 0 4px 14px rgba(17, 24, 20, 0.03);
+    --shadow-md: 0 1px 2px rgba(17, 24, 20, 0.03), 0 6px 24px rgba(17, 24, 20, 0.05);
+    --shadow-lg: 0 2px 4px rgba(17, 24, 20, 0.03), 0 16px 48px -12px rgba(17, 24, 20, 0.14);
+
+    /* ── Movimento ── */
+    --duration-fast: 150ms;
+    --duration: 200ms;
+    --duration-slow: 300ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* ── Layout ── */
+    --content-max: 1560px;
+    --sidebar-width: 16rem;
+    --sidebar-width-collapsed: 4.75rem;
   }
 
   .dark {
-    --background: 160 24% 8%;
-    --foreground: 150 12% 92%;
-    --card: 160 22% 11%;
-    --card-foreground: 150 12% 92%;
-    --primary: 152 55% 46%;
-    --primary-foreground: 160 30% 8%;
-    --secondary: 160 18% 16%;
-    --secondary-foreground: 150 12% 92%;
-    --muted: 160 16% 16%;
-    --muted-foreground: 150 8% 60%;
-    --accent: 160 18% 18%;
-    --accent-foreground: 150 12% 92%;
-    --destructive: 0 62% 45%;
+    --background: 155 12% 6%;
+    --surface: 155 10% 9%;
+    --surface-secondary: 155 9% 12%;
+    --card: 155 10% 9%;
+    --card-foreground: 150 10% 94%;
+    --popover: 155 10% 10%;
+    --popover-foreground: 150 10% 94%;
+
+    --foreground: 150 10% 94%;
+    --muted: 155 8% 15%;
+    --muted-foreground: 150 6% 62%;
+
+    --primary: 155 62% 45%;
+    --primary-hover: 155 62% 52%;
+    --primary-foreground: 155 30% 6%;
+    --primary-soft: 155 30% 14%;
+
+    --secondary: 155 8% 15%;
+    --secondary-foreground: 150 10% 94%;
+    --accent: 155 26% 16%;
+    --accent-foreground: 155 55% 72%;
+
+    --positive: 155 58% 50%;
+    --negative: 358 62% 62%;
+    --warning: 38 78% 56%;
+    --info: 210 72% 62%;
+    --destructive: 358 62% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 160 14% 20%;
-    --input: 160 14% 20%;
-    --ring: 152 55% 46%;
+
+    --border: 155 8% 18%;
+    --border-strong: 155 8% 24%;
+    --input: 155 8% 20%;
+    --ring: 155 62% 45%;
+
+    --chart-1: 155 58% 50%;
+    --chart-2: 200 66% 58%;
+    --chart-3: 38 80% 60%;
+    --chart-4: 265 55% 70%;
+    --chart-5: 176 55% 50%;
+    --chart-6: 12 70% 66%;
+    --chart-7: 226 58% 68%;
+    --chart-8: 84 45% 55%;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 24px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3), 0 16px 48px -12px rgba(0, 0, 0, 0.55);
   }
 
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; font-feature-settings: "rlig" 1, "calt" 1; }
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Hierarquia tipográfica: letter-spacing sutilmente negativo em títulos. */
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
+  }
+
+  /* Inputs têm largura intrínseca (~20 caracteres) e, dentro de um grid,
+     `min-width: auto` faz a coluna estourar no mobile. */
+  input,
+  select,
+  textarea {
+    min-width: 0;
+  }
+
+  /* Números financeiros nunca devem "dançar" ao animar. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::selection {
+    background-color: hsl(var(--primary) / 0.18);
+  }
+
+  /* Scrollbar discreta, estilo macOS. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--foreground) / 0.14);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--foreground) / 0.24);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Superfície padrão de card premium. */
+  .surface {
+    @apply rounded-card border border-border bg-card shadow-sm;
+  }
+
+  /* Reação de hover discreta — não transformar cards em botões. */
+  .surface-interactive {
+    @apply transition-[transform,box-shadow,border-color] duration-200 ease-[var(--ease-out)];
+  }
+  .surface-interactive:hover {
+    @apply -translate-y-px border-border-strong shadow-md;
+  }
+
+  /* Faixa de foco consistente em toda a UI. */
+  .focus-ring {
+    @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-ring/60;
+  }
+
+  /* Entrada em cascata dos blocos do dashboard. */
+  .stagger > * {
+    /* `backwards` (e não `both`): o estado final não pode travar o transform
+       do hover dos cards depois que a animação termina. */
+    animation: fade-up var(--duration-slow) var(--ease-out) backwards;
+  }
+  .stagger > *:nth-child(1)  { animation-delay: 0ms; }
+  .stagger > *:nth-child(2)  { animation-delay: 50ms; }
+  .stagger > *:nth-child(3)  { animation-delay: 100ms; }
+  .stagger > *:nth-child(4)  { animation-delay: 150ms; }
+  .stagger > *:nth-child(5)  { animation-delay: 200ms; }
+  .stagger > *:nth-child(6)  { animation-delay: 250ms; }
+  .stagger > *:nth-child(7)  { animation-delay: 300ms; }
+  .stagger > *:nth-child(8)  { animation-delay: 350ms; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97) translateY(-2px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Respeita quem pediu menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

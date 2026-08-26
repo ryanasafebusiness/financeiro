@@ -3,7 +3,10 @@ import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { brl } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatTile } from "@/components/ui/stat-tile";
+import { money } from "@/lib/utils";
 import { CreditCard, Wallet, Inbox } from "lucide-react";
 
 interface Payment {
@@ -59,36 +62,20 @@ export default function AdminPagamentos() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Pagamentos</h1>
-        <p className="text-muted-foreground">
-          Acompanhe todas as transações e o faturamento da plataforma.
-        </p>
-      </div>
+      <PageHeader
+        title="Pagamentos"
+        description="Acompanhe todas as transações e o faturamento da plataforma."
+      />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total recebido
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-emerald-600">
-                  {brl(totalReceived)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Soma de compras e assinaturas liberadas.
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <StatTile
+          label="Total recebido"
+          value={totalReceived}
+          icon={<Wallet className="h-4 w-4" />}
+          tone="positive"
+          loading={isLoading}
+          hint="Soma de compras e assinaturas liberadas."
+        />
       </div>
 
       <Card>
@@ -107,20 +94,16 @@ export default function AdminPagamentos() {
               ))}
             </div>
           ) : payments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <div className="rounded-full bg-muted p-3">
-                <Inbox className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium">Nenhum pagamento por aqui</p>
-              <p className="text-sm text-muted-foreground">
-                Assim que houver transações, elas aparecerão nesta lista.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Inbox />}
+              title="Nenhum pagamento por aqui"
+              description="Assim que houver transações, elas aparecerão nesta lista."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+              <table className="w-full min-w-[720px] text-meta">
                 <thead>
-                  <tr className="border-b text-left text-xs uppercase text-muted-foreground">
+                  <tr className="border-b border-border text-left text-label font-medium uppercase tracking-wide text-muted-foreground">
                     <th className="px-3 py-2 font-medium">Data</th>
                     <th className="px-3 py-2 font-medium">Evento</th>
                     <th className="px-3 py-2 font-medium">Plano</th>
@@ -133,7 +116,7 @@ export default function AdminPagamentos() {
                   {payments.map((p) => (
                     <tr
                       key={p.id}
-                      className="border-b last:border-0 hover:bg-muted/40"
+                      className="border-b border-border transition-colors duration-fast last:border-0 hover:bg-muted/50"
                     >
                       <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">
                         {new Date(p.created_at).toLocaleString("pt-BR")}
@@ -143,7 +126,7 @@ export default function AdminPagamentos() {
                       </td>
                       <td className="px-3 py-3">{p.plan ?? "—"}</td>
                       <td className="whitespace-nowrap px-3 py-3 font-medium">
-                        {brl(Number(p.amount ?? 0))}
+                        {money(Number(p.amount ?? 0))}
                       </td>
                       <td className="px-3 py-3 text-muted-foreground">
                         {p.payment_method ?? "—"}

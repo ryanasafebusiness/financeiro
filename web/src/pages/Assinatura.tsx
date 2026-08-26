@@ -1,5 +1,10 @@
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, Crown, Sparkles, MessageCircle, Clock, Zap } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  CheckCircle2, XCircle, Crown, Sparkles, MessageCircle, Clock, Zap, Loader2,
+} from "lucide-react";
 
 import {
   Card,
@@ -13,9 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useProfile, isPremiumActive } from "@/hooks/useProfile";
 import { api } from "@/lib/api";
-import { cn, brl, formatDate } from "@/lib/utils";
+import { cn, money, formatDate } from "@/lib/utils";
 
 interface PlanItem {
   id: string;
@@ -27,7 +34,6 @@ interface PlanItem {
 
 interface PlansResponse {
   plans: PlanItem[];
-  checkout_url: string;
 }
 
 function daysLeft(iso: string | null | undefined): number | null {
@@ -38,6 +44,23 @@ function daysLeft(iso: string | null | undefined): number | null {
 
 export default function Assinatura() {
   const { data: profile, isLoading: profileLoading } = useProfile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [checkoutPlanId, setCheckoutPlanId] = useState<string | null>(null);
+
+  // Retorno do checkout da Stripe. O acesso em si é liberado pelo webhook, que
+  // pode chegar alguns segundos depois — por isso a mensagem não promete nada.
+  useEffect(() => {
+    const status = searchParams.get("checkout");
+    if (!status) return;
+    if (status === "sucesso") {
+      toast.success("Pagamento recebido! Seu acesso é liberado em instantes 💚");
+    } else if (status === "cancelado") {
+      toast.info("Checkout cancelado — nada foi cobrado.");
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("checkout");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const { data: plansData, isLoading: plansLoading } = useQuery<PlansResponse>({
     queryKey: ["plans"],
@@ -49,7 +72,6 @@ export default function Assinatura() {
 
   const active = isPremiumActive(profile ?? null);
   const planName = profile?.plan || "Trial";
-  const checkoutUrl = plansData?.checkout_url ?? "";
   const isTrial = planName === "Trial";
 
   const msgsUsed = profile?.messages_this_month ?? 0;
@@ -62,18 +84,30 @@ export default function Assinatura() {
   const urgentDays = days !== null && days <= 1;
   const isUrgent = isTrial && active && (urgentQuota || urgentDays);
 
-  const handleSubscribe = () => {
-    if (checkoutUrl) window.open(checkoutUrl, "_blank");
+  /** Abre a Checkout Session da Stripe para o plano escolhido. */
+  const handleSubscribe = async (planId?: string) => {
+    const id = planId ?? plansData?.plans[0]?.id;
+    if (!id) {
+      toast.error("Nenhum plano disponível no momento.");
+      return;
+    }
+    setCheckoutPlanId(id);
+    try {
+      const { url } = await api.createCheckout(id);
+      // Mesma aba: o retorno da Stripe traz o usuário de volta a /assinatura.
+      window.location.assign(url);
+    } catch (err) {
+      toast.error((err as Error).message || "Não foi possível abrir o checkout.");
+      setCheckoutPlanId(null);
+    }
   };
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Assinatura</h1>
-        <p className="text-muted-foreground">
-          Acompanhe o status do seu plano e escolha a melhor opção para você.
-        </p>
-      </div>
+      <PageHeader
+        title="Assinatura"
+        description="Acompanhe o status do seu plano e escolha a melhor opção para você."
+      />
 
       {/* Status do plano atual */}
       {profileLoading ? (
@@ -83,7 +117,7 @@ export default function Assinatura() {
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-full bg-primary/10 p-2 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
                   <Crown className="h-5 w-5" />
                 </div>
                 <div>
@@ -127,17 +161,17 @@ export default function Assinatura() {
           className={cn(
             "mb-8",
             isUrgent
-              ? "border-amber-300 bg-amber-50"
+              ? "border-warning/30 bg-warning/[0.08]"
               : "border-primary/20 bg-primary/5"
           )}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className={cn("h-4 w-4", isUrgent ? "text-amber-600" : "text-primary")} />
+              <Clock className={cn("h-4 w-4", isUrgent ? "text-warning" : "text-primary")} />
               Período de teste grátis
             </CardTitle>
             {isUrgent && (
-              <CardDescription className="text-amber-700 font-medium">
+              <CardDescription className="text-warning font-medium">
                 {urgentQuota && msgsRemaining === 0
                   ? "Você usou todas as mensagens do trial. Assine para continuar!"
                   : urgentQuota
@@ -173,12 +207,17 @@ export default function Assinatura() {
                 </span>
               </div>
             )}
-            {isUrgent && checkoutUrl && (
+            {isUrgent && (plansData?.plans.length ?? 0) > 0 && (
               <Button
                 className="w-full"
-                onClick={handleSubscribe}
+                onClick={() => handleSubscribe()}
+                disabled={checkoutPlanId !== null}
               >
-                <Zap className="mr-2 h-4 w-4" />
+                {checkoutPlanId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Zap className="h-4 w-4" />
+                )}
                 Assinar agora e continuar sem parar
               </Button>
             )}
@@ -187,9 +226,9 @@ export default function Assinatura() {
       )}
 
       {/* Planos disponíveis */}
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">Planos disponíveis</h2>
-        <p className="text-sm text-muted-foreground">
+      <div className="mb-4 mt-8">
+        <h2 className="text-card-title font-semibold text-foreground">Planos disponíveis</h2>
+        <p className="text-meta text-muted-foreground">
           Escolha o plano ideal e libere o acesso na hora.
         </p>
       </div>
@@ -202,12 +241,14 @@ export default function Assinatura() {
         </div>
       ) : !plansData || plansData.plans.length === 0 ? (
         <Card>
-          <CardContent className="py-10 text-center text-muted-foreground">
-            Nenhum plano disponível no momento.
-          </CardContent>
+          <EmptyState
+            icon={<Crown />}
+            title="Nenhum plano disponível"
+            description="Nenhum plano está publicado no momento. Tente novamente mais tarde."
+          />
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 pt-3 sm:grid-cols-2 xl:grid-cols-3 stagger">
           {plansData.plans.map((plan, index) => {
             const isHighlighted =
               index === Math.floor(plansData.plans.length / 2) &&
@@ -216,15 +257,14 @@ export default function Assinatura() {
               <Card
                 key={plan.id}
                 className={cn(
-                  "flex flex-col",
-                  isHighlighted &&
-                    "border-primary shadow-lg ring-1 ring-primary/40 relative"
+                  "relative flex flex-col surface-interactive",
+                  isHighlighted && "border-primary/40 shadow-md ring-1 ring-primary/20"
                 )}
               >
                 {isHighlighted && (
                   <Badge
-                    variant="success"
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 gap-1"
+                    variant="solid"
+                    className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 gap-1 shadow-xs"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
                     Mais popular
@@ -236,23 +276,23 @@ export default function Assinatura() {
                 </CardHeader>
                 <CardContent className="flex-1 space-y-2">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-primary">
-                      {brl(Number(plan.price))}
+                    <span className="text-metric font-semibold tabular text-foreground">
+                      {money(Number(plan.price))}
                     </span>
                   </div>
-                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                  <ul className="space-y-2 pt-1 text-meta text-muted-foreground">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                       {plan.duration_days} dias de acesso
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                       {plan.message_limit > 0
                         ? `${plan.message_limit} mensagens`
                         : "Mensagens ilimitadas"}
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                       Liberação automática após o pagamento
                     </li>
                   </ul>
@@ -261,9 +301,12 @@ export default function Assinatura() {
                   <Button
                     className="w-full"
                     variant={isHighlighted ? "default" : "outline"}
-                    onClick={handleSubscribe}
-                    disabled={!checkoutUrl}
+                    onClick={() => handleSubscribe(plan.id)}
+                    disabled={checkoutPlanId !== null}
                   >
+                    {checkoutPlanId === plan.id && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
                     Assinar
                   </Button>
                 </CardFooter>
@@ -274,14 +317,15 @@ export default function Assinatura() {
       )}
 
       {/* Aviso amigável */}
-      <Card className="mt-8 border-primary/30 bg-primary/5">
-        <CardContent className="flex items-start gap-3 py-5">
-          <div className="rounded-full bg-primary/10 p-2 text-primary">
-            <MessageCircle className="h-5 w-5" />
+      <Card className="mt-6 border-primary/20 bg-primary-soft/60">
+        <CardContent className="flex items-start gap-3 pt-6">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-primary shadow-xs">
+            <MessageCircle className="h-[1.05rem] w-[1.05rem]" />
           </div>
-          <p className="text-sm text-foreground">
-            Após pagar pela Cakto, seu acesso é liberado na hora. Volte ao
-            WhatsApp e mande um oi para o ZapWallet 💚
+          <p className="text-meta leading-relaxed text-foreground">
+            O pagamento é processado pela Stripe e seu acesso é liberado
+            automaticamente. Depois é só voltar ao WhatsApp e mandar um oi para o
+            ZapWallet 💚
           </p>
         </CardContent>
       </Card>

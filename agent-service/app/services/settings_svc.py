@@ -20,14 +20,15 @@ log = logging.getLogger(__name__)
 
 SYSTEM_PROMPT_KEY = "system_prompt"
 
-# ── Funil / Cakto (fonte única; o backend lê DAQUI, não do .env) ───────────────
-CHECKOUT_URL_KEY = "checkout_url"
+# ── Funil (fonte única; o backend lê DAQUI, não do .env) ───────────────────────
+# URL pública do painel: base dos success_url/cancel_url do Checkout da Stripe.
+APP_BASE_URL_KEY = "app_base_url"
 TRIAL_DAYS_KEY = "trial_days"
 TRIAL_MESSAGE_LIMIT_KEY = "trial_message_limit"
 NUDGE_THRESHOLD_MSGS_KEY = "nudge_threshold_msgs"
 NUDGE_THRESHOLD_DAYS_KEY = "nudge_threshold_days"
 _FUNNEL_KEYS = {
-    CHECKOUT_URL_KEY, TRIAL_DAYS_KEY, TRIAL_MESSAGE_LIMIT_KEY,
+    APP_BASE_URL_KEY, TRIAL_DAYS_KEY, TRIAL_MESSAGE_LIMIT_KEY,
     NUDGE_THRESHOLD_MSGS_KEY, NUDGE_THRESHOLD_DAYS_KEY,
 }
 
@@ -42,14 +43,19 @@ OPENAI_TRANSCRIBE_MODEL_KEY = "openai_transcribe_model"
 OPENAI_GUARDRAILS_MODEL_KEY = "openai_guardrails_model"
 UAZAPI_BASE_URL_KEY = "uazapi_base_url"
 UAZAPI_TOKEN_KEY = "uazapi_token"
-CAKTO_WEBHOOK_SECRET_KEY = "cakto_webhook_secret"
+STRIPE_SECRET_KEY_KEY = "stripe_secret_key"
+STRIPE_WEBHOOK_SECRET_KEY = "stripe_webhook_secret"
 _INTEGRATION_KEYS = {
     OPENAI_API_KEY_KEY, OPENAI_MODEL_KEY, OPENAI_VISION_MODEL_KEY,
     OPENAI_TRANSCRIBE_MODEL_KEY, OPENAI_GUARDRAILS_MODEL_KEY,
-    UAZAPI_BASE_URL_KEY, UAZAPI_TOKEN_KEY, CAKTO_WEBHOOK_SECRET_KEY,
+    UAZAPI_BASE_URL_KEY, UAZAPI_TOKEN_KEY,
+    STRIPE_SECRET_KEY_KEY, STRIPE_WEBHOOK_SECRET_KEY,
 }
 # Quais valores são segredos (mascarados ao expor no painel).
-_SECRET_INTEGRATION_KEYS = {OPENAI_API_KEY_KEY, UAZAPI_TOKEN_KEY, CAKTO_WEBHOOK_SECRET_KEY}
+_SECRET_INTEGRATION_KEYS = {
+    OPENAI_API_KEY_KEY, UAZAPI_TOKEN_KEY,
+    STRIPE_SECRET_KEY_KEY, STRIPE_WEBHOOK_SECRET_KEY,
+}
 _SECRETS_TABLE = "app_secrets"
 
 _CACHE_TTL = 30.0  # segundos — janela de sincronização entre salvar e o agente ver
@@ -94,7 +100,7 @@ def reset_system_prompt() -> None:
     _cache.pop(SYSTEM_PROMPT_KEY, None)
 
 
-# ── Funil / Cakto — leitura com cache + fallback tolerante a banco off ─────────
+# ── Funil — leitura com cache + fallback tolerante a banco off ────────────────
 def _get_raw(key: str):
     """Valor cru de app_settings[key] com cache curto. None se ausente.
 
@@ -123,10 +129,18 @@ def _get_int(key: str, default: int) -> int:
         return int(default)
 
 
-def get_checkout_url() -> str:
-    """URL de checkout vigente (override do admin ou default do .env)."""
-    v = _get_raw(CHECKOUT_URL_KEY)
-    return v if isinstance(v, str) and v.strip() else settings.checkout_url
+def get_subscribe_url() -> str:
+    """Link mandado no WhatsApp: leva à página de assinatura do painel, de onde
+    o checkout da Stripe é aberto. (Com a Stripe não existe mais URL estática de
+    checkout — cada compra abre uma Checkout Session criada na hora.)"""
+    return f"{get_app_base_url()}/assinatura"
+
+
+def get_app_base_url() -> str:
+    """URL pública do painel (override do admin ou default do .env), sem barra final."""
+    v = _get_raw(APP_BASE_URL_KEY)
+    base = v if isinstance(v, str) and v.strip() else settings.app_base_url
+    return base.rstrip("/")
 
 
 def get_trial_days() -> int:
@@ -148,7 +162,7 @@ def get_nudge_threshold_days() -> int:
 def get_funnel_settings() -> dict:
     """Snapshot de toda a config do funil (p/ o endpoint admin)."""
     return {
-        "checkout_url": get_checkout_url(),
+        "app_base_url": get_app_base_url(),
         "trial_days": get_trial_days(),
         "trial_message_limit": get_trial_message_limit(),
         "nudge_threshold_msgs": get_nudge_threshold_msgs(),
@@ -222,8 +236,12 @@ def get_uazapi_token() -> str:
     return _secret_or(UAZAPI_TOKEN_KEY, settings.uazapi_token)
 
 
-def get_cakto_webhook_secret() -> str:
-    return _secret_or(CAKTO_WEBHOOK_SECRET_KEY, settings.cakto_webhook_secret)
+def get_stripe_secret_key() -> str:
+    return _secret_or(STRIPE_SECRET_KEY_KEY, settings.stripe_secret_key)
+
+
+def get_stripe_webhook_secret() -> str:
+    return _secret_or(STRIPE_WEBHOOK_SECRET_KEY, settings.stripe_webhook_secret)
 
 
 def _mask(v: str) -> str:
@@ -247,7 +265,8 @@ def get_integration_settings() -> dict:
         OPENAI_GUARDRAILS_MODEL_KEY: settings.openai_guardrails_model,
         UAZAPI_BASE_URL_KEY: settings.uazapi_base_url,
         UAZAPI_TOKEN_KEY: settings.uazapi_token,
-        CAKTO_WEBHOOK_SECRET_KEY: settings.cakto_webhook_secret,
+        STRIPE_SECRET_KEY_KEY: settings.stripe_secret_key,
+        STRIPE_WEBHOOK_SECRET_KEY: settings.stripe_webhook_secret,
     }
     out = {}
     for key in _INTEGRATION_KEYS:

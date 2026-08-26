@@ -4,12 +4,12 @@ Guia para o Claude Code trabalhar neste repositório.
 
 ## O que é
 SaaS de finanças pessoais via WhatsApp ("ZapWallet"). Migração de um fluxo n8n para um serviço
-Python (FastAPI + Celery) com uazapi, OpenAI, Supabase e Cakto. Três partes:
+Python (FastAPI + Celery) com uazapi, OpenAI, Supabase e Stripe. Três partes:
 
 | Pasta | O que é |
 |---|---|
-| `agent-service/` | Backend Python — webhook do WhatsApp, agente de IA, API do painel, webhook da Cakto |
-| `supabase/migrations/` | 0001–0008: schema, funções/triggers, RLS, seed, transações ricas, categorias, funil/trial, cofre de chaves (app_secrets) |
+| `agent-service/` | Backend Python — webhook do WhatsApp, agente de IA, API do painel, webhook da Stripe |
+| `supabase/migrations/` | 0001–0009: schema, funções/triggers, RLS, seed, transações ricas, categorias, funil/trial, cofre de chaves (app_secrets), migração p/ Stripe |
 | `web/` | Painel React (usuário + admin) — Vite + TS + Tailwind |
 
 ## Comandos
@@ -43,7 +43,7 @@ cd agent-service && pip install -r requirements-dev.txt && pytest
 memória) e o `FakeOpenAI` (respostas roteirizadas: `assistant_tools`/`tool_call`/`final`/`raw`).
 `conftest.py` define env dummy, troca `supabase_svc._client` pelo dublê, deixa o OpenAI
 scriptável (`patch_openai`) e captura envios à uazapi (`sent`). Cobre finance_svc, as 8 tools,
-parsing da saída, helpers de tasks, redis/debounce, webhook Cakto, o prompt, funil de vendas
+parsing da saída, helpers de tasks, redis/debounce, webhook Stripe, o prompt, funil de vendas
 (gating/nudges/settings_svc) e cenários do agente (`run`, `finalize_batch`, `process_inbound`)
 em modo Celery eager.
 
@@ -66,31 +66,35 @@ em modo Celery eager.
 - **Memória**: tabela `chat_histories` (formato LangChain `type: human|ai`), igual ao n8n.
 - **Supabase** (`services/supabase_svc.py`): service-role (bypassa RLS). Criação de usuário e
   `generate_link` (login OTP) via GoTrue admin com httpx.
-- **Cakto** (`webhooks/cakto.py`): valida `secret`, mapeia `offer.id`→`plans`, estende/revoga
-  `premium_until` + `plan`, audita em `payments`.
-- **Settings** (`services/settings_svc.py`): fonte única para checkout_url, trial_days,
+- **Stripe** (`webhooks/stripe_webhook.py`): assinaturas recorrentes. Verifica a assinatura do
+  header `Stripe-Signature` (corpo CRU), mapeia `metadata.plan_id`/`price` → `plans`, e ATRIBUI
+  `premium_until` a partir do fim do período da Stripe (nunca soma, então reentrega não estende
+  duas vezes). Libera em `checkout.session.completed`/`invoice.paid`, revoga em
+  `customer.subscription.deleted`, audita tudo em `payments` (unique `(stripe_event_id, event)`).
+  O checkout é criado em `POST /api/checkout` (`services/stripe_svc.py`) — não existe URL estática.
+- **Settings** (`services/settings_svc.py`): fonte única para app_base_url, trial_days,
   trial_message_limit, nudge thresholds (em `app_settings`) **e** as chaves de integração —
-  OpenAI key/modelos, uazapi base/token, Cakto secret (em `app_secrets`). Lê com TTL 30s e
+  OpenAI key/modelos, uazapi base/token, Stripe secret key + webhook secret (em `app_secrets`). Lê com TTL 30s e
   fallback para `.env`/defaults. Admin grava via PUT e invalida o cache; nenhum redeploy.
   `app_settings` é legível por autenticados (RLS `using(true)`) — por isso segredos vão em
   `app_secrets`, tabela com RLS sem policies (só service-role acessa; ver migration 0008).
 - **OpenAI client** (`services/openai_client.py`): `get()` devolve o client com a chave vigente
   (settings_svc), recriando só quando a chave muda. Use SEMPRE `openai_client.get()` — nunca
   instanciar `openai.OpenAI` direto — p/ a troca de chave pelo painel ter efeito. uazapi
-  (`_base`/`_token`) e Cakto (secret) também leem do settings_svc.
+  (`_base`/`_token`) e Stripe (`stripe_svc.get()`, mesmo padrão do openai_client) também leem do settings_svc.
 - **Recibo de transação**: ao registrar com sucesso, `ai_agent_svc.run` anexa um cartão
   determinístico em `reply["_cards"]` (formato fixo: valor/título/categoria/data). O pipeline
   envia o(s) recibo(s) ANTES do comentário do agente e NÃO os persiste na memória. O prompt
   instrui o agente a só comentar, sem repetir os dados.
 - **Admin** (`admin/router.py`): protegido por `is_admin` (JWT); stats, usuários, conceder premium,
   toggle IA, pagamentos, CRUD de planos, configurações do funil, integrações/chaves de API
-  (GET mascara segredos; PUT só grava não-vazios), saúde do setup Cakto, logs (buffer + SSE).
+  (GET mascara segredos; PUT só grava não-vazios), saúde do setup Stripe, logs (buffer + SSE).
 
 ## Banco (multi-tenant por usuário)
 Tenant = 1 usuário (1 telefone = 1 `profiles.id` = `auth.users.id`). Tabelas escopadas por
 `user_id`. RLS: usuário vê/edita só as próprias linhas; `is_admin()` vê tudo. Escritas sensíveis
 (profiles, messages, payments, chat_histories) são feitas pela service-role. Telefone armazenado
-só com dígitos, formato `55DDDNÚMERO`.
+só com dígitos, no formato internacional sem "+" (ex.: `55DDDNÚMERO`, `351NÚMERO`).
 
 ## Frontend (`web/src`)
 - Stack: React Router v6, TanStack Query, Tailwind, `sonner`. UI primitives **próprios** em

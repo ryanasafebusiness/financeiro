@@ -16,12 +16,12 @@ def test_cenario_registrar_gasto(db, profile, patch_openai):
     patch_openai([
         assistant_tools(tool_call("registrar_transacao", tipo="gasto", valor=80,
                                   categoria="Lazer", descricao="cinema", data="hoje")),
-        final({"nao_responder": False, "mensagens_cliente": ["Anotado! R$80 no cinema 🎬"]}),
+        final({"nao_responder": False, "mensagens_cliente": ["Anotado! 80 € no cinema 🎬"]}),
     ])
     reply = A.run("sess", "cinema 80", profile)
     txs = db.rows("transactions")
     assert len(txs) == 1 and txs[0]["type"] == "expense" and txs[0]["amount"] == 80.0
-    assert reply["mensagens_cliente"] == ["Anotado! R$80 no cinema 🎬"]
+    assert reply["mensagens_cliente"] == ["Anotado! 80 € no cinema 🎬"]
     assert "_is_fallback" not in reply
 
 
@@ -50,7 +50,7 @@ def test_cenario_multi_tool_em_um_turno(db, profile, patch_openai):
 # ── valor alto: confirma antes (modelo não chama tool) ───────────────────────
 def test_cenario_valor_alto_pede_confirmacao(db, profile, patch_openai):
     patch_openai([
-        final({"mensagens_cliente": ["Eita! R$350 em pastel mesmo? 😅 Confirma?"]}),
+        final({"mensagens_cliente": ["Eita! 350 € em pastel mesmo? 😅 Confirma?"]}),
     ])
     reply = A.run("sess", "350 pastel", profile)
     assert db.rows("transactions") == []      # nada registrado ainda
@@ -62,7 +62,7 @@ def test_cenario_consultar(db, profile, patch_openai):
     F.create_transaction(USER_ID, "expense", 40, "Mercado", "x")
     patch_openai([
         assistant_tools(tool_call("consultar_transacoes", tipo="gasto")),
-        final({"mensagens_cliente": ["Você gastou R$40 no mercado."]}),
+        final({"mensagens_cliente": ["Você gastou 40 € no mercado."]}),
     ])
     reply = A.run("sess", "quanto gastei?", profile)
     assert reply["mensagens_cliente"]
@@ -73,7 +73,7 @@ def test_cenario_editar(db, profile, patch_openai):
     patch_openai([
         assistant_tools(tool_call("consultar_transacoes", categoria="Alimentação")),
         assistant_tools(tool_call("editar_transacao", id=tx["id"], valor=55)),
-        final({"mensagens_cliente": ["Corrigido pra R$55 ✅"]}),
+        final({"mensagens_cliente": ["Corrigido pra 55 € ✅"]}),
     ])
     A.run("sess", "a pizza foi 55 na verdade", profile)
     assert db.rows("transactions")[0]["amount"] == 55.0
@@ -103,7 +103,7 @@ def test_cenario_criar_meta(db, profile, patch_openai):
 def test_cenario_definir_limite(db, profile, patch_openai):
     patch_openai([
         assistant_tools(tool_call("gerenciar_limite", acao="definir", categoria="Lazer", valor=300, periodo="mensal")),
-        final({"mensagens_cliente": ["Limite de R$300 em lazer definido 👍"]}),
+        final({"mensagens_cliente": ["Limite de 300 € em lazer definido 👍"]}),
     ])
     A.run("sess", "limite de 300 em lazer", profile)
     assert db.rows("spending_limits")[0]["limit_amount"] == 300.0
@@ -124,7 +124,7 @@ def test_cenario_relatorio(db, profile, patch_openai):
     F.create_transaction(USER_ID, "expense", 100, "Alimentação", "x")
     patch_openai([
         assistant_tools(tool_call("gerar_relatorio", periodo="mes_atual")),
-        final({"mensagens_cliente": ["No mês você gastou R$100 em Alimentação 🍔"]}),
+        final({"mensagens_cliente": ["No mês você gastou 100 € em Alimentação 🍔"]}),
     ])
     reply = A.run("sess", "me manda um relatório", profile)
     assert reply["mensagens_cliente"]

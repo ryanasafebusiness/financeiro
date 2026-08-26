@@ -179,7 +179,7 @@ def get_funnel_settings(_admin: dict = Depends(require_admin)):
 
 
 class FunnelSettingsBody(BaseModel):
-    checkout_url: Optional[str] = None
+    app_base_url: Optional[str] = None
     trial_days: Optional[int] = None
     trial_message_limit: Optional[int] = None
     nudge_threshold_msgs: Optional[int] = None
@@ -196,7 +196,7 @@ def update_funnel_settings(body: FunnelSettingsBody, _admin: dict = Depends(requ
     return {"ok": True, **settings_svc.get_funnel_settings()}
 
 
-# ── Integrações / chaves de API (OpenAI, uazapi, Cakto) ───────────────────────
+# ── Integrações / chaves de API (OpenAI, uazapi, Stripe) ──────────────────────
 @router.get("/api/settings/integrations")
 def get_integrations(_admin: dict = Depends(require_admin)):
     """Estado das integrações. Segredos vêm MASCARADOS (nunca em texto puro)."""
@@ -211,7 +211,8 @@ class IntegrationsBody(BaseModel):
     openai_guardrails_model: Optional[str] = None
     uazapi_base_url: Optional[str] = None
     uazapi_token: Optional[str] = None
-    cakto_webhook_secret: Optional[str] = None
+    stripe_secret_key: Optional[str] = None
+    stripe_webhook_secret: Optional[str] = None
 
 
 @router.put("/api/settings/integrations")
@@ -231,34 +232,33 @@ def update_integrations(body: IntegrationsBody, _admin: dict = Depends(require_a
     return {"ok": True, "saved": saved, **{"settings": settings_svc.get_integration_settings()}}
 
 
-# ── Saúde da integração Cakto ─────────────────────────────────────────────────
-_CHECKOUT_PLACEHOLDER = "https://pay.cakto.com.br/sua-oferta"
-_OFFER_PLACEHOLDER_PREFIX = "TROQUE_PELO_OFFER_ID"
-
-
-@router.get("/api/cakto/health")
-def cakto_health(_admin: dict = Depends(require_admin)):
+# ── Saúde da integração Stripe ────────────────────────────────────────────────
+@router.get("/api/stripe/health")
+def stripe_health(_admin: dict = Depends(require_admin)):
+    """Checklist do que ainda falta para as assinaturas funcionarem."""
     plans = supabase_svc.list_plans()
     active_plans = [p for p in plans if p.get("active")]
-    missing_offer = [
+    # Um plano só é vendável se tiver um Price recorrente da Stripe colado nele.
+    missing_price = [
         p["name"] for p in active_plans
-        if not p.get("cakto_offer_id") or str(p["cakto_offer_id"]).startswith(_OFFER_PLACEHOLDER_PREFIX)
+        if not str(p.get("stripe_price_id") or "").startswith("price_")
     ]
-    checkout = settings_svc.get_checkout_url()
-    checkout_url_set = bool(checkout) and checkout != _CHECKOUT_PLACEHOLDER
-    secret_set = bool(settings_svc.get_cakto_webhook_secret())
+    secret_key = settings_svc.get_stripe_secret_key()
+    base_url = settings_svc.get_app_base_url()
     ok = (
-        secret_set
-        and checkout_url_set
-        and len(missing_offer) == 0
+        bool(secret_key)
+        and bool(settings_svc.get_stripe_webhook_secret())
         and len(active_plans) > 0
+        and len(missing_price) == 0
     )
     return {
-        "webhook_secret_set": secret_set,
-        "checkout_url_set": checkout_url_set,
-        "checkout_url": checkout,
+        "secret_key_set": bool(secret_key),
+        "livemode": secret_key.startswith("sk_live_"),
+        "webhook_secret_set": bool(settings_svc.get_stripe_webhook_secret()),
+        "webhook_url": f"{base_url}/webhooks/stripe",
+        "app_base_url": base_url,
         "plans_active": len(active_plans),
-        "plans_missing_offer": missing_offer,
+        "plans_missing_price": missing_price,
         "trial_days": settings_svc.get_trial_days(),
         "trial_message_limit": settings_svc.get_trial_message_limit(),
         "ok": ok,
@@ -276,7 +276,7 @@ class PlanBody(BaseModel):
     price: float
     duration_days: int
     message_limit: int = 0
-    cakto_offer_id: str = ""
+    stripe_price_id: str = ""
     active: bool = True
 
 
@@ -297,7 +297,7 @@ class PlanPatch(BaseModel):
     price: Optional[float] = None
     duration_days: Optional[int] = None
     message_limit: Optional[int] = None
-    cakto_offer_id: Optional[str] = None
+    stripe_price_id: Optional[str] = None
     active: Optional[bool] = None
 
 

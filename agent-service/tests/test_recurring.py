@@ -124,7 +124,7 @@ def test_tool_recorrencia_criar_incompleto(ctx, db):
 
 
 def test_tool_recorrencia_criar_sem_valor_pede(ctx, db):
-    # Caso real: "tenho uma assinatura da OpenAI todo dia 12" (sem valor) -> NÃO cria com R$ 0,00.
+    # Caso real: "tenho uma assinatura da OpenAI todo dia 12" (sem valor) -> NÃO cria com 0,00 €.
     r = gerenciar_recorrencia.execute(ctx, acao="criar", tipo="gasto", titulo="Assinatura OpenAI",
                                       frequencia="mensal", dia_do_mes=12)
     assert r["ok"] is False and r["erro"] == "valor_obrigatorio"

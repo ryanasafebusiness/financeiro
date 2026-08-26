@@ -15,7 +15,7 @@ def test_card_gasto_tem_infos():
         "categoria": "Lazer", "local": "Shopping", "data": "2026-06-15",
     })
     assert "✅ Gasto registrado" in card
-    assert "💸 R$ 80,50" in card
+    assert "💸 80,50 €" in card
     assert "📌 Cinema com a Gata" in card
     assert "🏷️ Lazer" in card
     assert "📍 Shopping" in card
@@ -25,7 +25,7 @@ def test_card_gasto_tem_infos():
 def test_card_receita_usa_rotulo_e_emoji_proprios():
     card = A.format_transaction_card({"tipo": "receita", "valor": 2000, "titulo": "Salário"})
     assert "✅ Receita registrada" in card
-    assert "💰 R$ 2.000,00" in card
+    assert "💰 2.000,00 €" in card
 
 
 def test_card_omite_campos_ausentes():
@@ -34,10 +34,10 @@ def test_card_omite_campos_ausentes():
     assert "🏷️" not in card          # sem categoria
 
 
-def test_fmt_brl_milhar_e_decimal():
-    assert A._fmt_brl(1234.5) == "R$ 1.234,50"
-    assert A._fmt_brl(0) == "R$ 0,00"
-    assert A._fmt_brl("xxx") == "R$ 0,00"
+def test_fmt_eur_milhar_e_decimal():
+    assert A._fmt_eur(1234.5) == "1.234,50 €"
+    assert A._fmt_eur(0) == "0,00 €"
+    assert A._fmt_eur("xxx") == "0,00 €"
 
 
 # ── integração com run() ──────────────────────────────────────────────────────

@@ -1,47 +1,31 @@
-import { useState } from "react";
-import { NavLink, Link, Outlet, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, ArrowLeftRight, Repeat, Tags, Target, Gauge, BarChart3, CreditCard,
-  Shield, Users, MessageSquare, Receipt, Bot, LogOut, Menu, X, Wallet,
-  Package, Settings, AlertTriangle, KeyRound,
+  ArrowLeftRight, AlertTriangle, BarChart3, CreditCard, Gauge, LayoutDashboard,
+  Repeat, Settings, Tags, Target, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile, isPremiumActive } from "@/hooks/useProfile";
+import type { Profile } from "@/integrations/supabase/types";
+import { CommandMenu, useCommandShortcut, type CommandItem } from "@/components/ui/command-menu";
+import { Sidebar } from "./Sidebar";
+import { Topbar, type Alert } from "./Topbar";
+import { BottomNav } from "./BottomNav";
 
-const userNav = [
-  { to: "/dashboard", label: "Início", icon: LayoutDashboard },
-  { to: "/transacoes", label: "Transações", icon: ArrowLeftRight },
-  { to: "/recorrentes", label: "Recorrentes", icon: Repeat },
-  { to: "/categorias", label: "Categorias", icon: Tags },
-  { to: "/metas", label: "Metas", icon: Target },
-  { to: "/limites", label: "Limites", icon: Gauge },
-  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/assinatura", label: "Assinatura", icon: CreditCard },
-];
+const COLLAPSED_KEY = "zw:sidebar-collapsed";
 
-const adminNav = [
-  { to: "/admin", label: "Visão geral", icon: Shield, end: true },
-  { to: "/admin/usuarios", label: "Usuários", icon: Users },
-  { to: "/admin/conversas", label: "Conversas", icon: MessageSquare },
-  { to: "/admin/pagamentos", label: "Pagamentos", icon: Receipt },
-  { to: "/admin/planos", label: "Planos", icon: Package },
-  { to: "/admin/prompt", label: "Prompt da IA", icon: Bot },
-  { to: "/admin/integracoes", label: "Integrações", icon: KeyRound },
-  { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
-];
-
-function useTrialBanner(profile: ReturnType<typeof useProfile>["data"]) {
+/** Mensagem de urgência do trial (regra de negócio original preservada). */
+function trialMessage(profile?: Profile | null): string | null {
   if (!profile || profile.plan !== "Trial" || !isPremiumActive(profile)) return null;
 
   const remaining =
     profile.message_limit > 0
       ? Math.max(0, profile.message_limit - (profile.messages_this_month ?? 0))
       : null;
-  const daysLeft =
-    profile.premium_until
-      ? Math.max(0, Math.floor((new Date(profile.premium_until).getTime() - Date.now()) / 86_400_000))
-      : null;
+  const daysLeft = profile.premium_until
+    ? Math.max(0, Math.floor((new Date(profile.premium_until).getTime() - Date.now()) / 86_400_000))
+    : null;
 
   if (remaining !== null && remaining <= 3) {
     return remaining === 0
@@ -60,131 +44,211 @@ export default function AppLayout() {
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
 
-  const handleSignOut = async () => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem(COLLAPSED_KEY) === "1"
+  );
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0");
+  }, [collapsed]);
+
+  const handleSignOut = useCallback(async () => {
     await signOut();
     navigate("/login");
-  };
+  }, [signOut, navigate]);
 
-  const trialBanner = useTrialBanner(profile);
+  const openCommand = useCallback(() => setCommandOpen(true), []);
+  useCommandShortcut(openCommand);
 
-  const linkClass = ({ isActive }: { isActive: boolean }) =>
-    cn(
-      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200",
-      isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-    );
+  const banner = trialMessage(profile);
 
-  const iconOnlyClass = ({ isActive }: { isActive: boolean }) =>
-    cn(
-      "flex items-center justify-center h-10 w-10 rounded-lg transition-colors duration-200 relative group",
-      isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-    );
+  const alerts: Alert[] = useMemo(() => {
+    const list: Alert[] = [];
+    if (banner) {
+      list.push({
+        id: "trial",
+        title: "Seu trial está acabando",
+        description: banner,
+        to: "/assinatura",
+        tone: "warning",
+      });
+    }
+    return list;
+  }, [banner]);
 
-  const Sidebar = (
-    <div className="flex h-full flex-col gap-1 p-4">
-      <div className={cn("flex items-center gap-2 px-2 mb-6", collapsed ? "justify-center" : "")}>
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
-          <Wallet className="h-5 w-5" />
-        </div>
-        {!collapsed && <span className="text-lg font-bold">ZapWallet</span>}
-      </div>
-
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="mb-4 flex items-center justify-center h-10 w-10 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-200 self-center"
-        title={collapsed ? "Expandir" : "Retrair"}
-      >
-        {collapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
-      </button>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="space-y-1">
-          {userNav.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              className={collapsed ? iconOnlyClass : linkClass}
-              onClick={() => setOpen(false)}
-              title={collapsed ? n.label : undefined}
-            >
-              <n.icon className="h-4 w-4" />
-              {!collapsed && n.label}
-            </NavLink>
-          ))}
-        </div>
-
-        {profile?.is_admin && (
-          <div className="mt-6 space-y-1">
-            {!collapsed && (
-              <div className="px-3 text-xs font-semibold uppercase text-muted-foreground">Admin</div>
-            )}
-            {adminNav.map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                end={n.end}
-                className={collapsed ? iconOnlyClass : linkClass}
-                onClick={() => setOpen(false)}
-                title={collapsed ? n.label : undefined}
-              >
-                <n.icon className="h-4 w-4" />
-                {!collapsed && n.label}
-              </NavLink>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={handleSignOut}
-        className={collapsed ? iconOnlyClass({ isActive: false }) : "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"}
-        title={collapsed ? "Sair" : undefined}
-      >
-        <LogOut className="h-4 w-4" /> {!collapsed && "Sair"}
-      </button>
-    </div>
+  /** Ações do ⌘K — apenas navegação; a lógica de cada tela é a existente. */
+  const commandItems: CommandItem[] = useMemo(
+    () => [
+      {
+        id: "nova-transacao",
+        label: "Nova transação",
+        group: "Ações",
+        keywords: "adicionar gasto receita lancamento",
+        icon: <ArrowLeftRight />,
+        run: () => navigate("/transacoes?novo=1"),
+      },
+      {
+        id: "nova-meta",
+        label: "Criar meta",
+        group: "Ações",
+        keywords: "objetivo poupar guardar",
+        icon: <Target />,
+        run: () => navigate("/metas?novo=1"),
+      },
+      {
+        id: "novo-limite",
+        label: "Criar limite",
+        group: "Ações",
+        keywords: "orcamento teto controle",
+        icon: <Gauge />,
+        run: () => navigate("/limites?novo=1"),
+      },
+      {
+        id: "nova-recorrente",
+        label: "Criar recorrência",
+        group: "Ações",
+        keywords: "assinatura mensal fixo",
+        icon: <Repeat />,
+        run: () => navigate("/recorrentes?novo=1"),
+      },
+      {
+        id: "ir-inicio",
+        label: "Início",
+        group: "Ir para",
+        keywords: "dashboard resumo home",
+        icon: <LayoutDashboard />,
+        run: () => navigate("/dashboard"),
+      },
+      {
+        id: "ir-transacoes",
+        label: "Transações",
+        group: "Ir para",
+        keywords: "extrato historico",
+        icon: <ArrowLeftRight />,
+        run: () => navigate("/transacoes"),
+      },
+      {
+        id: "ir-categorias",
+        label: "Categorias",
+        group: "Ir para",
+        icon: <Tags />,
+        run: () => navigate("/categorias"),
+      },
+      {
+        id: "ir-relatorios",
+        label: "Relatórios",
+        group: "Ir para",
+        keywords: "graficos analise",
+        icon: <BarChart3 />,
+        run: () => navigate("/relatorios"),
+      },
+      {
+        id: "ir-assinatura",
+        label: "Assinatura",
+        group: "Ir para",
+        keywords: "plano pagamento premium configuracoes",
+        icon: <CreditCard />,
+        run: () => navigate("/assinatura"),
+      },
+      ...(profile?.is_admin
+        ? [
+            {
+              id: "ir-admin",
+              label: "Painel admin",
+              group: "Ir para",
+              keywords: "administracao gestao configuracoes",
+              icon: <Settings />,
+              run: () => navigate("/admin"),
+            } as CommandItem,
+          ]
+        : []),
+    ],
+    [navigate, profile?.is_admin]
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* sidebar desktop */}
-      <aside className={cn(
-        "hidden shrink-0 border-r md:block transition-all duration-200",
-        collapsed ? "w-20" : "w-64"
-      )}>{Sidebar}</aside>
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      {/* Sidebar desktop — fixa, sem borda pesada */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 hidden shrink-0 border-r border-border bg-surface md:block",
+          "transition-[width] duration-slow ease-out-soft",
+          collapsed ? "w-[var(--sidebar-width-collapsed)]" : "w-[var(--sidebar-width)]"
+        )}
+      >
+        <Sidebar
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed((v) => !v)}
+          isAdmin={profile?.is_admin}
+          onSignOut={handleSignOut}
+        />
+      </aside>
 
-      {/* sidebar mobile */}
-      {open && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 border-r bg-card">{Sidebar}</aside>
+      {/* Sidebar mobile — drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-foreground/25 backdrop-blur-[2px] animate-fade-in"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 h-full w-[17rem] border-r border-border bg-surface shadow-lg animate-sheet-in">
+            <button
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Fechar menu"
+              className="absolute right-3 top-4 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-fast hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <Sidebar
+              collapsed={false}
+              isAdmin={profile?.is_admin}
+              onNavigate={() => setDrawerOpen(false)}
+              onSignOut={handleSignOut}
+              showCollapseButton={false}
+            />
+          </aside>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-3 border-b px-4 md:hidden">
-          <button onClick={() => setOpen((v) => !v)} aria-label="Menu">
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-          <span className="font-bold">ZapWallet</span>
-        </header>
+      <div
+        className={cn(
+          "flex min-h-screen min-w-0 flex-col transition-[padding] duration-slow ease-out-soft",
+          collapsed ? "md:pl-[var(--sidebar-width-collapsed)]" : "md:pl-[var(--sidebar-width)]"
+        )}
+      >
+        <Topbar
+          profile={profile}
+          alerts={alerts}
+          onOpenMenu={() => setDrawerOpen(true)}
+          onOpenCommand={openCommand}
+          onSignOut={handleSignOut}
+        />
 
-        {trialBanner && (
+        {banner && (
           <Link
             to="/assinatura"
-            className="flex items-center gap-2 border-b bg-amber-50 px-4 py-2.5 text-sm text-amber-800 hover:bg-amber-100"
+            className="group border-b border-warning/20 bg-warning/[0.07] transition-colors duration-fast hover:bg-warning/[0.12]"
           >
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>{trialBanner}</span>
+            <div className="mx-auto flex w-full max-w-content items-start gap-2.5 px-4 py-2.5 text-meta leading-snug text-warning sm:items-center md:px-8">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 sm:mt-0" />
+              <span className="min-w-0">{banner}</span>
+            </div>
           </Link>
         )}
 
-        <main className="flex-1 overflow-x-hidden p-4 md:p-8">
-          <Outlet />
+        <main className="min-w-0 flex-1 overflow-x-hidden pb-20 md:pb-0">
+          <div className="mx-auto w-full min-w-0 max-w-content px-4 py-6 sm:px-5 md:px-8 md:py-8">
+            <Outlet />
+          </div>
         </main>
       </div>
+
+      <BottomNav />
+
+      <CommandMenu open={commandOpen} onOpenChange={setCommandOpen} items={commandItems} />
     </div>
   );
 }

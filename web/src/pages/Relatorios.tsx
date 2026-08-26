@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ResponsiveContainer,
   PieChart,
@@ -12,17 +13,17 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, TrendingDown, Wallet, Receipt } from "lucide-react";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
+  TrendingUp, TrendingDown, Wallet, Receipt, BarChart3, PieChart as PieChartIcon,
+} from "lucide-react";
+import { Card, CardToolbar } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatTile } from "@/components/ui/stat-tile";
+import { CHART_COLORS } from "@/components/dashboard/CategoryDonut";
 import { Skeleton } from "@/components/ui/skeleton";
-import { brl } from "@/lib/utils";
+import { money } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Transaction } from "@/integrations/supabase/types";
 import { useQuery } from "@tanstack/react-query";
@@ -30,20 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 type Periodo = "atual" | "passado" | "tres" | "ano";
 
-const PALETA = [
-  "#10b981",
-  "#3b82f6",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#f97316",
-  "#6366f1",
-  "#84cc16",
-  "#06b6d4",
-  "#eab308",
-];
+const PALETA = CHART_COLORS;
 
 const iso = (d: Date) => {
   const y = d.getFullYear();
@@ -106,14 +94,23 @@ function rotuloMes(chave: string): string {
 
 interface ResumoCard {
   titulo: string;
-  valor: string;
+  /** Valor numérico bruto — o StatTile cuida da formatação e da animação. */
+  bruto: number;
   icone: React.ReactNode;
-  cor: string;
+  tone: "positive" | "negative" | "primary" | "neutral";
+  formato?: (n: number) => string;
 }
 
 export default function Relatorios() {
   const { user } = useAuth();
-  const [periodo, setPeriodo] = useState<Periodo>("atual");
+  // Permite chegar aqui já no período escolhido no header do dashboard.
+  const [searchParams] = useSearchParams();
+  const periodoInicial = (["atual", "passado", "tres", "ano"] as Periodo[]).includes(
+    searchParams.get("periodo") as Periodo
+  )
+    ? (searchParams.get("periodo") as Periodo)
+    : "atual";
+  const [periodo, setPeriodo] = useState<Periodo>(periodoInicial);
 
   const { from, to } = useMemo(() => calcularPeriodo(periodo), [periodo]);
 
@@ -191,134 +188,143 @@ export default function Relatorios() {
   const resumos: ResumoCard[] = [
     {
       titulo: "Total de receitas",
-      valor: brl(totalReceitas),
+      bruto: totalReceitas,
       icone: <TrendingUp className="h-4 w-4" />,
-      cor: "text-emerald-600",
+      tone: "positive",
     },
     {
       titulo: "Total de gastos",
-      valor: brl(totalGastos),
+      bruto: totalGastos,
       icone: <TrendingDown className="h-4 w-4" />,
-      cor: "text-destructive",
+      tone: "negative",
     },
     {
       titulo: "Saldo",
-      valor: brl(saldo),
+      bruto: saldo,
       icone: <Wallet className="h-4 w-4" />,
-      cor: saldo >= 0 ? "text-emerald-600" : "text-destructive",
+      tone: saldo >= 0 ? "positive" : "negative",
     },
     {
       titulo: "Ticket médio de gasto",
-      valor: brl(ticketMedio),
+      bruto: ticketMedio,
       icone: <Receipt className="h-4 w-4" />,
-      cor: "text-primary",
+      tone: "primary",
     },
   ];
 
+
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Relatórios</h1>
-          <p className="text-muted-foreground">
-            Visualize suas receitas e gastos com gráficos.
-          </p>
-        </div>
-        <div className="w-full sm:w-56">
+      <PageHeader
+        title="Relatórios"
+        description="Visualize suas receitas e gastos com gráficos."
+        actions={
           <Select
             value={periodo}
             onChange={(e) => setPeriodo(e.target.value as Periodo)}
             aria-label="Selecionar período"
+            className="w-full sm:w-52"
           >
             <option value="atual">Mês atual</option>
             <option value="passado">Mês passado</option>
             <option value="tres">Últimos 3 meses</option>
             <option value="ano">Ano</option>
           </Select>
-        </div>
-      </div>
+        }
+      />
 
       {/* Cards-resumo */}
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <Skeleton className="h-4 w-28" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-7 w-24" />
-                </CardContent>
-              </Card>
-            ))
-          : resumos.map((r) => (
-              <Card key={r.titulo}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {r.titulo}
-                  </CardTitle>
-                  <span className={r.cor}>{r.icone}</span>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold ${r.cor}`}>{r.valor}</div>
-                </CardContent>
-              </Card>
-            ))}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger">
+        {resumos.map((r) => (
+          <StatTile
+            key={r.titulo}
+            label={r.titulo}
+            value={r.bruto}
+            icon={r.icone}
+            tone={r.tone}
+            loading={isLoading}
+            format={r.formato}
+          />
+        ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         {/* Receitas x Gastos por mês */}
         <Card>
-          <CardHeader>
-            <CardTitle>Receitas x Gastos por mês</CardTitle>
-            <CardDescription>Comparativo agregado por mês no período.</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardToolbar
+            icon={<BarChart3 className="h-4 w-4" />}
+            title="Receitas x Gastos"
+            description="Comparativo agregado por mês no período."
+          />
+          <div className="px-3 pb-5 sm:px-4">
             {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : vazio || dadosPorMes.length === 0 ? (
               <EstadoVazio mensagem="Nenhuma transação encontrada neste período." />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dadosPorMes}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="mes" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis
-                    fontSize={12}
+                <BarChart data={dadosPorMes} barGap={6}>
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                    strokeDasharray="3 6"
+                  />
+                  <XAxis
+                    dataKey="mes"
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(v: number) => brl(v)}
-                    width={90}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                    dy={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={64}
+                    tickFormatter={(v: number) =>
+                      v >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v))
+                    }
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                   />
                   <Tooltip
-                    formatter={(value: number) => brl(Number(value))}
-                    labelClassName="font-medium"
-                    contentStyle={{ borderRadius: 8, fontSize: 13 }}
+                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.5 }}
+                    formatter={(value: number) => money(Number(value))}
+                    contentStyle={{
+                      borderRadius: 12,
+                      fontSize: 13,
+                      border: "1px solid hsl(var(--border))",
+                      background: "hsl(var(--popover))",
+                      boxShadow: "var(--shadow-md)",
+                    }}
                   />
-                  <Legend />
-                  <Bar dataKey="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  />
+                  <Bar dataKey="Receitas" fill="hsl(var(--positive))" radius={[6, 6, 0, 0]} maxBarSize={38} />
+                  <Bar dataKey="Gastos" fill="hsl(var(--negative))" radius={[6, 6, 0, 0]} maxBarSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </CardContent>
+          </div>
         </Card>
 
         {/* Gastos por categoria */}
         <Card>
-          <CardHeader>
-            <CardTitle>Gastos por categoria</CardTitle>
-            <CardDescription>Distribuição dos gastos no período.</CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardToolbar
+            icon={<PieChartIcon className="h-4 w-4" />}
+            title="Gastos por categoria"
+            description="Distribuição dos gastos no período."
+          />
+          <div className="px-4 pb-5 sm:px-6">
             {isLoading ? (
-              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[300px] w-full rounded-lg" />
             ) : vazio || dadosPorCategoria.length === 0 ? (
               <EstadoVazio mensagem="Nenhum gasto encontrado neste período." />
             ) : (
               <GastosPorCategoria dados={dadosPorCategoria} total={totalGastos} />
             )}
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>
@@ -327,10 +333,12 @@ export default function Relatorios() {
 
 function EstadoVazio({ mensagem }: { mensagem: string }) {
   return (
-    <div className="flex h-[300px] flex-col items-center justify-center text-center">
-      <Receipt className="mb-3 h-10 w-10 text-muted-foreground/50" />
-      <p className="text-sm text-muted-foreground">{mensagem}</p>
-    </div>
+    <EmptyState
+      icon={<Receipt />}
+      title="Nada por aqui"
+      description={mensagem}
+      className="h-[300px]"
+    />
   );
 }
 
@@ -358,15 +366,24 @@ function GastosPorCategoria({
             cy="50%"
             outerRadius={100}
             innerRadius={55}
-            paddingAngle={2}
+            paddingAngle={2.5}
+            cornerRadius={5}
+            stroke="none"
+            animationDuration={700}
           >
             {dados.map((_, i) => (
               <Cell key={i} fill={PALETA[i % PALETA.length]} />
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number, name: string) => [brl(Number(value)), name]}
-            contentStyle={{ borderRadius: 8, fontSize: 13 }}
+            formatter={(value: number, name: string) => [money(Number(value)), name]}
+            contentStyle={{
+              borderRadius: 12,
+              fontSize: 13,
+              border: "1px solid hsl(var(--border))",
+              background: "hsl(var(--popover))",
+              boxShadow: "var(--shadow-md)",
+            }}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -377,18 +394,18 @@ function GastosPorCategoria({
           return (
             <div
               key={d.name}
-              className="flex items-center justify-between gap-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-meta transition-colors duration-fast hover:bg-muted"
             >
               <div className="flex min-w-0 items-center gap-2">
                 <span
-                  className="h-3 w-3 shrink-0 rounded-sm"
+                  className="h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: PALETA[i % PALETA.length] }}
                 />
-                <span className="truncate">{d.name}</span>
+                <span className="truncate capitalize">{d.name}</span>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="font-medium">{brl(d.value)}</span>
-                <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
+                <span className="font-semibold tabular">{money(d.value)}</span>
+                <span className="w-11 text-right tabular text-muted-foreground">{pct.toFixed(1)}%</span>
               </div>
             </div>
           );

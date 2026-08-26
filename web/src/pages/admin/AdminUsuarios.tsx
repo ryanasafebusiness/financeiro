@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Select } from "@/components/ui/select";
 import {
   Dialog,
@@ -141,12 +143,10 @@ export default function AdminUsuarios() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Usuários</h1>
-        <p className="text-muted-foreground">
-          Gerencie usuários, libere acesso premium e controle a IA.
-        </p>
-      </div>
+      <PageHeader
+        title="Usuários"
+        description="Gerencie usuários, libere acesso premium e controle a IA."
+      />
 
       <Card>
         <CardHeader>
@@ -175,21 +175,23 @@ export default function AdminUsuarios() {
               ))}
             </div>
           ) : users.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground">
-              Nenhum usuário encontrado.
-            </div>
+            <EmptyState
+              icon={<Users />}
+              title="Nenhum usuário encontrado"
+              description="Ajuste a busca ou aguarde novos cadastros."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+              <table className="w-full min-w-[760px] text-meta">
                 <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-3 pr-4 font-medium">Nome</th>
-                    <th className="py-3 pr-4 font-medium">Telefone</th>
-                    <th className="py-3 pr-4 font-medium">Plano</th>
-                    <th className="py-3 pr-4 font-medium">Validade</th>
-                    <th className="py-3 pr-4 font-medium">Mensagens</th>
-                    <th className="py-3 pr-4 font-medium">IA</th>
-                    <th className="py-3 pr-4 text-right font-medium">Ações</th>
+                  <tr className="border-b border-border text-left text-label font-medium uppercase tracking-wide text-muted-foreground">
+                    <th className="py-2.5 pr-4 font-medium">Nome</th>
+                    <th className="py-2.5 pr-4 font-medium">Telefone</th>
+                    <th className="py-2.5 pr-4 font-medium">Plano</th>
+                    <th className="py-2.5 pr-4 font-medium">Validade</th>
+                    <th className="py-2.5 pr-4 font-medium">Mensagens</th>
+                    <th className="py-2.5 pr-4 font-medium">IA</th>
+                    <th className="py-2.5 pr-4 text-right font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -200,7 +202,7 @@ export default function AdminUsuarios() {
                     return (
                       <tr
                         key={u.id}
-                        className="border-b last:border-0 align-middle"
+                        className="border-b border-border align-middle transition-colors duration-fast last:border-0 hover:bg-muted/50"
                       >
                         <td className="py-3 pr-4">
                           <div className="flex items-center gap-2">
@@ -212,7 +214,7 @@ export default function AdminUsuarios() {
                             )}
                           </div>
                           {u.email && (
-                            <div className="text-xs text-muted-foreground">
+                            <div className="max-w-[16rem] truncate text-label text-muted-foreground">
                               {u.email}
                             </div>
                           )}

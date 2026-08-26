@@ -1,8 +1,10 @@
 """Gera o PDF de um relatório financeiro do ZapWallet (bytes), via fpdf2.
 
 Função pura: recebe os dados já agregados (não toca no banco) e devolve os bytes
-do PDF — fácil de testar offline. Usa as fontes core (Helvetica/latin-1), então
-todo texto é higienizado para latin-1 (acentos pt-BR passam; emojis são removidos).
+do PDF — fácil de testar offline. Usa as fontes core (Helvetica) com encoding
+cp1252, então todo texto é higienizado para cp1252 (acentos e o símbolo do euro
+passam; emojis são removidos). ATENÇÃO: latin-1 puro NÃO tem "€" — trocar este
+encoding de volta faria o símbolo sumir silenciosamente do relatório.
 """
 from datetime import datetime
 
@@ -23,19 +25,19 @@ _MAX_TX_ROWS = 40
 
 
 def _txt(s) -> str:
-    """Mantém acentos pt-BR (latin-1) e descarta o que a fonte core não imprime (emojis)."""
+    """Mantém acentos e o "€" (cp1252) e descarta o que a fonte core não imprime (emojis)."""
     s = "" if s is None else str(s)
-    return s.encode("latin-1", "ignore").decode("latin-1").strip()
+    return s.encode("cp1252", "ignore").decode("cp1252").strip()
 
 
-def _brl(v) -> str:
-    """12345.6 -> 'R$ 12.345,60' (com sinal quando negativo)."""
+def _eur(v) -> str:
+    """12345.6 -> '12.345,60 €' (com sinal quando negativo)."""
     try:
         n = float(v)
     except (TypeError, ValueError):
         n = 0.0
     s = f"{abs(n):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    return f"-R$ {s}" if n < 0 else f"R$ {s}"
+    return f"-{s} €" if n < 0 else f"{s} €"
 
 
 def _ellipsize(s: str, limit: int) -> str:
@@ -59,6 +61,9 @@ def _fmt_dt(tx: dict) -> str:
 class _ReportPDF(FPDF):
     def __init__(self, period_label: str, generated_str: str):
         super().__init__(orientation="P", unit="mm", format="A4")
+        # cp1252 (WinAnsi) em vez do latin-1 padrão do fpdf2: é o que permite
+        # imprimir o "€" com as fontes core.
+        self.core_fonts_encoding = "cp1252"
         self.period_label = period_label
         self.generated_str = generated_str
         self.set_margins(14, 14, 14)
@@ -115,7 +120,7 @@ class _ReportPDF(FPDF):
             self.set_xy(x + 6, y + 10)
             self.set_text_color(*color)
             self.set_font("Helvetica", "B", 15)
-            self.cell(box_w - 8, 8, _brl(val))
+            self.cell(box_w - 8, 8, _eur(val))
             x += box_w + gap
         self.set_y(y + 30)
 
@@ -156,7 +161,7 @@ class _ReportPDF(FPDF):
             pct = (val / total_expense * 100) if total_expense else 0
             self.set_text_color(*DARK)
             self.cell(86, 7, _ellipsize(row.get("category") or "Outros", 42), fill=fill)
-            self.cell(46, 7, _brl(val), align="R", fill=fill)
+            self.cell(46, 7, _eur(val), align="R", fill=fill)
             self.cell(50, 7, f"{pct:.1f}%", align="R", fill=fill,
                       new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
@@ -179,7 +184,7 @@ class _ReportPDF(FPDF):
             self.cell(74, 6, title, fill=fill)
             self.cell(40, 6, _ellipsize(t.get("category") or "-", 20), fill=fill)
             self.set_text_color(*(GREEN if inc else RED))
-            self.cell(40, 6, ("+ " if inc else "- ") + _brl(abs(float(t.get("amount") or 0))),
+            self.cell(40, 6, ("+ " if inc else "- ") + _eur(abs(float(t.get("amount") or 0))),
                       align="R", fill=fill, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         extra = len(transactions) - _MAX_TX_ROWS
         if extra > 0:
@@ -202,7 +207,7 @@ class _ReportPDF(FPDF):
             self.set_text_color(*DARK)
             self.cell(56, 7, _ellipsize(str(l.get("category", "")).capitalize(), 28), fill=fill)
             self.cell(30, 7, per, fill=fill)
-            self.cell(56, 7, f"{_brl(l.get('spent', 0))} / {_brl(l.get('limit', 0))}", align="R", fill=fill)
+            self.cell(56, 7, f"{_eur(l.get('spent', 0))} / {_eur(l.get('limit', 0))}", align="R", fill=fill)
             self.set_text_color(*(RED if exceeded else DARK))
             self.cell(40, 7, status, align="R", fill=fill, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 

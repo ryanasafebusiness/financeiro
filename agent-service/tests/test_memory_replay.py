@@ -49,7 +49,7 @@ def test_get_memory_legado_infere_tool_por_texto(db):
     # p/ o histórico antigo não reensinar o modelo a responder sem ferramenta.
     supabase_svc.append_memory(
         SESSION, "cinema 80",
-        json.dumps({"mensagens_cliente": ["Registrei um gasto de R$80 no cinema 🎬"]}),
+        json.dumps({"mensagens_cliente": ["Registrei um gasto de 80 € no cinema 🎬"]}),
     )
     mem = supabase_svc.get_memory(SESSION, 50)
     assert [m["role"] for m in mem] == ["user", "assistant", "tool", "assistant"]

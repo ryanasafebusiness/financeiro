@@ -62,7 +62,7 @@ def test_trial_esgotado_por_cota_trava(make_db, sent, patch_openai):
     tasks.process_inbound.apply(args=[make_raw("gastei 50")])
 
     assert len(sent) == 1
-    assert "mensagens grátis" in sent[0][1] and "cakto" in sent[0][1].lower()
+    assert "mensagens grátis" in sent[0][1] and "/assinatura" in sent[0][1]
     assert db.rows("transactions") == []
 
 

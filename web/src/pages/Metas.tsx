@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Goal } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
-import { brl, formatDate, cn } from "@/lib/utils";
+import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
+import { money, formatDate, cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState as UIEmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogHeader,
@@ -75,6 +78,7 @@ export default function Metas() {
   const [tab, setTab] = useState<GoalStatus>("active");
 
   const [createOpen, setCreateOpen] = useState(false);
+  useOpenOnQuery(() => { setCreateForm(EMPTY_FORM); setCreateOpen(true); });
   const [createForm, setCreateForm] = useState<GoalFormState>(EMPTY_FORM);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -229,18 +233,16 @@ export default function Metas() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Metas</h1>
-          <p className="text-muted-foreground">
-            Acompanhe suas metas de economia e veja seu progresso.
-          </p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova meta
-        </Button>
-      </div>
+      <PageHeader
+        title="Metas"
+        description="Acompanhe suas metas de economia e veja seu progresso."
+        actions={
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Nova meta
+          </Button>
+        }
+      />
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as GoalStatus)}>
         <TabsList>
@@ -275,7 +277,7 @@ export default function Metas() {
                 onCreate={() => setCreateOpen(true)}
               />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 stagger">
                 {filtered.map((goal) => (
                   <GoalCard
                     key={goal.id}
@@ -391,12 +393,12 @@ export default function Metas() {
             <p className="text-sm text-muted-foreground">
               Guardado atualmente:{" "}
               <span className="font-medium text-foreground">
-                {brl(Number(addGoal.saved_amount))}
+                {money(Number(addGoal.saved_amount))}
               </span>
             </p>
           )}
           <div className="space-y-2">
-            <Label htmlFor="add-value">Valor a adicionar (R$)</Label>
+            <Label htmlFor="add-value">Valor a adicionar (€)</Label>
             <Input
               id="add-value"
               type="number"
@@ -451,40 +453,40 @@ function GoalCard({
   const reached = target > 0 && saved >= target;
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col surface-interactive">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-primary" />
-            {goal.name}
-          </CardTitle>
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+              <Target className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <CardTitle className="truncate">{goal.name}</CardTitle>
+              {goal.deadline && (
+                <CardDescription className="mt-0.5">
+                  Prazo: {formatDate(goal.deadline)}
+                </CardDescription>
+              )}
+            </div>
+          </div>
           <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
         </div>
-        {goal.deadline && (
-          <CardDescription>
-            Prazo: {formatDate(goal.deadline)}
-          </CardDescription>
-        )}
       </CardHeader>
-      <CardContent className="flex-1 space-y-3">
+      <CardContent className="flex-1 space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-lg font-semibold text-emerald-600">
-            {brl(saved)}
+          <span className="text-[1.375rem] font-semibold tracking-tight tabular text-foreground">
+            {money(saved)}
           </span>
-          <span className="text-sm text-muted-foreground">
-            de {brl(target)}
-          </span>
+          <span className="text-meta tabular text-muted-foreground">de {money(target)}</span>
         </div>
-        <Progress value={pct} />
+        <Progress value={pct} tone="primary" />
         <p
           className={cn(
-            "text-xs",
-            reached ? "text-emerald-600 font-medium" : "text-muted-foreground"
+            "text-label font-medium tabular",
+            reached ? "text-positive" : "text-muted-foreground"
           )}
         >
-          {reached
-            ? "Meta atingida!"
-            : `${pct.toFixed(0)}% concluído`}
+          {reached ? "Meta atingida 🎉" : `${pct.toFixed(0)}% concluído`}
         </p>
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
@@ -552,7 +554,7 @@ function GoalFormFields({ form, setForm }: GoalFormFieldsProps) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="goal-target">Valor alvo (R$)</Label>
+          <Label htmlFor="goal-target">Valor alvo (€)</Label>
           <Input
             id="goal-target"
             type="number"
@@ -566,7 +568,7 @@ function GoalFormFields({ form, setForm }: GoalFormFieldsProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="goal-saved">Valor já guardado (R$)</Label>
+          <Label htmlFor="goal-saved">Valor já guardado (€)</Label>
           <Input
             id="goal-saved"
             type="number"
@@ -628,27 +630,19 @@ function EmptyState({ status, onCreate }: EmptyStateProps) {
 
   return (
     <Card>
-      <CardContent className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          {status === "completed" ? (
-            <Trophy className="h-6 w-6" />
-          ) : (
-            <Target className="h-6 w-6" />
-          )}
-        </div>
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-            {description}
-          </p>
-        </div>
-        {showCta && (
-          <Button onClick={onCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Criar primeira meta
-          </Button>
-        )}
-      </CardContent>
+      <UIEmptyState
+        icon={status === "completed" ? <Trophy /> : <Target />}
+        title={title}
+        description={description}
+        action={
+          showCta ? (
+            <Button onClick={onCreate}>
+              <Plus className="h-4 w-4" />
+              Criar primeira meta
+            </Button>
+          ) : undefined
+        }
+      />
     </Card>
   );
 }

@@ -56,13 +56,13 @@ export default function AdminPrompt() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      <div className="mb-1 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-soft text-primary">
           <Bot className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Prompt da IA</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold text-foreground">Prompt da IA</h1>
+          <p className="text-meta text-muted-foreground">
             Persona e regras do agente no WhatsApp. Salvar sincroniza com o serviço na nuvem sem redeploy.
           </p>
         </div>

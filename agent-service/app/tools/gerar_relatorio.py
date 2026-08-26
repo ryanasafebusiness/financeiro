@@ -115,9 +115,9 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
     doc_name = f"Relatório ZapWallet - {_safe_filename(label)}.pdf"
     caption = (
         f"📊 Relatório de {label}\n"
-        f"Receitas: R$ {resumo['total_income']:.2f}\n"
-        f"Gastos: R$ {resumo['total_expense']:.2f}\n"
-        f"Saldo: R$ {resumo['balance']:.2f}"
+        f"Receitas: {resumo['total_income']:.2f} €\n"
+        f"Gastos: {resumo['total_expense']:.2f} €\n"
+        f"Saldo: {resumo['balance']:.2f} €"
     ).replace(".", ",")
 
     enviado = uazapi_svc.send_media(

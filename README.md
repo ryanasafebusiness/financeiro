@@ -15,7 +15,7 @@ admin controla planos, trial, checkout e o texto do agente sem precisar de redep
 | Backend | Python 3.12, FastAPI, Vercel Queues (produção), Celery (local), Redis |
 | IA | OpenAI (`gpt-4o-mini` + Whisper + GPT-4o vision) |
 | Banco / Auth | Supabase (Postgres + GoTrue) com RLS |
-| Pagamento | Cakto (webhook de compra/reembolso) |
+| Pagamento | Stripe Billing (assinaturas recorrentes em EUR) |
 | Painel | React 18, Vite, TypeScript, Tailwind |
 
 ## Pré-requisitos
@@ -23,7 +23,7 @@ admin controla planos, trial, checkout e o texto do agente sem precisar de redep
 - Conta no [Supabase](https://supabase.com) (plano free funciona)
 - Chave de API da [OpenAI](https://platform.openai.com)
 - Instância no [uazapi](https://uazapi.com) com WhatsApp conectado
-- Conta na [Cakto](https://cakto.com.br) com produto e oferta criados
+- Conta na [Stripe](https://stripe.com) com um produto e um **preço recorrente** em EUR
 - Redis acessível em produção (Upstash, Railway Redis, etc.)
 
 ---
@@ -45,7 +45,7 @@ WhatsApp ──▶ uazapi ──▶ POST /webhook (FastAPI)
                               │
               Supabase (profiles, transactions, goals, limits, memória…)
                               ▲
-        painel web (React) ───┘   |   Cakto ──▶ POST /webhooks/cakto (libera premium)
+        painel web (React) ───┘   |   Stripe ─▶ POST /webhooks/stripe (libera premium)
 ```
 
 - **Debounce durável**: cada mensagem regrava um marcador no Redis e agenda `finalize_batch`
@@ -66,7 +66,7 @@ agent-service/            # backend Python
     services/             # redis, uazapi, supabase, media, guardrails, finance, ai_agent, settings
     tools/                # 8 tools do agente (transação, editar, deletar, consultar, meta, limite, recorrência, relatório)
     api/                  # OTP por WhatsApp, /api/me, /api/plans
-    webhooks/cakto.py     # libera/revoga premium
+    webhooks/stripe_webhook.py  # libera/renova/revoga premium
     admin/                # API do painel ops (usuarios, planos, configurações, prompt, logs SSE)
   Procfile                # web / worker-inbound / worker-agent / beat
   Dockerfile
@@ -121,11 +121,13 @@ Variáveis obrigatórias no `.env`:
 | `OPENAI_API_KEY` | platform.openai.com |
 | `UAZAPI_BASE_URL` | painel uazapi → sua instância |
 | `UAZAPI_TOKEN` | painel uazapi → sua instância → token |
-| `CAKTO_WEBHOOK_SECRET` | Cakto → Configurações → Notificações → Webhooks → secret |
+| `STRIPE_SECRET_KEY` | Stripe → Desenvolvedores → Chaves de API |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Desenvolvedores → Webhooks → seu endpoint → Signing secret |
+| `APP_BASE_URL` | URL pública do painel (base do retorno do checkout) |
 | `QUEUE_BRIDGE_SECRET` | segredo aleatório compartilhado pelos Services |
 | `CRON_SECRET` | segredo aleatório usado automaticamente pelo Vercel Cron |
 
-> 💡 As chaves do **OpenAI**, **uazapi** e **Cakto** (e os modelos) também podem ser geridas
+> 💡 As chaves do **OpenAI**, **uazapi** e **Stripe** (e os modelos) também podem ser geridas
 > pelo painel admin em **Integrações** — sem mexer no `.env` nem fazer redeploy. O `.env` serve
 > como valor inicial/fallback; o que estiver salvo no painel tem prioridade. `SUPABASE_*` e
 > `REDIS_URL` continuam só no `.env` (são infraestrutura).
@@ -141,17 +143,25 @@ Aponte o webhook da sua instância para `https://SEU_BACKEND/webhook` e marque *
 
 ---
 
-### 4. Cakto — integração de pagamento
+### 4. Stripe — assinaturas
 
-1. Em **Configurações → Notificações → Webhooks**, crie um webhook:
-   - URL: `https://SEU_BACKEND/webhooks/cakto`
-   - Marque todos os eventos (purchase_approved, refund, chargeback, subscription_*)
-   - Copie o **secret** para `CAKTO_WEBHOOK_SECRET` no `.env`.
-2. O painel admin mostra a URL exata e a instrução de onde colar — veja **Primeiros passos no
-   admin** abaixo.
+1. Crie um **produto** e um **preço recorrente em EUR** (Stripe → Catálogo de produtos).
+   Guarde o `price_...` de cada plano.
+2. Em **Desenvolvedores → Webhooks → Adicionar endpoint**:
+   - URL: `https://SEU_BACKEND/webhooks/stripe`
+   - Eventos: `checkout.session.completed`, `invoice.paid`, `customer.subscription.deleted`
+     (opcionalmente `invoice.payment_failed` e `customer.subscription.updated`, que são só auditados)
+   - Copie o **Signing secret** (`whsec_...`) para `STRIPE_WEBHOOK_SECRET`.
+3. O painel admin mostra a URL exata e o que ainda falta — veja **Primeiros passos no admin**.
 
-> Os offer IDs e a URL de checkout são configurados pelo painel admin (não no SQL). Faça isso
-> após subir o serviço pela primeira vez.
+> Os `price_...` de cada plano são colados no painel admin (não no SQL). Faça isso após subir
+> o serviço pela primeira vez.
+
+**Como o acesso é liberado:** o painel chama `POST /api/checkout`, que abre uma Checkout Session
+com o `profile_id` gravado em `client_reference_id` e em `subscription_data.metadata` — este
+último é o que sobrevive às renovações. O premium só é concedido pelo webhook, nunca pelo retorno
+do navegador. `premium_until` recebe o fim do período informado pela Stripe (atribuição, não soma),
+então uma reentrega do mesmo evento não estende o acesso duas vezes.
 
 ---
 
@@ -177,13 +187,14 @@ update public.profiles set is_admin = true where phone = '55DDDSEUNÚMERO';
 
 Depois, no painel web (`/admin`):
 
-1. **Integrações** → cole a chave da OpenAI, a URL+token da uazapi e o secret do webhook da
-   Cakto. Os segredos ficam num cofre no servidor (tabela `app_secrets`, só o backend acessa) e
-   nunca são exibidos por completo. Entram em vigor em ~30s, sem redeploy.
-2. **Configurações** → cole a URL de checkout da Cakto, ajuste os dias/mensagens do trial e
+1. **Integrações** → cole a chave da OpenAI, a URL+token da uazapi e as duas chaves da Stripe
+   (secret key e signing secret do webhook). Os segredos ficam num cofre no servidor (tabela
+   `app_secrets`, só o backend acessa) e nunca são exibidos por completo. Entram em vigor em
+   ~30s, sem redeploy.
+2. **Configurações** → confirme a URL pública do painel, ajuste os dias/mensagens do trial e
    os thresholds de nudge. O card de saúde mostra o que ainda falta configurar.
-3. **Planos** → crie os planos (nome, preço, duração, offer ID da Cakto). O offer ID fica em
-   Cakto → Produtos → sua oferta → **ID da oferta**.
+3. **Planos** → crie os planos (nome, preço, duração, **Price ID da Stripe**). O `price_...` fica
+   em Stripe → Catálogo de produtos → seu produto → Preço.
 4. **Prompt da IA** → edite a persona/instruções do agente sem redeploy.
 
 ---
@@ -221,10 +232,11 @@ Configurável no painel admin sem redeploy:
 | Limite de mensagens do trial | 15 | Admin → Configurações |
 | Nudge N mensagens antes do fim | 3 | Admin → Configurações |
 | Nudge N dias antes do fim | 1 | Admin → Configurações |
-| URL de checkout | — | Admin → Configurações |
+| URL pública do painel | — | Admin → Configurações |
 
-Quando o usuário esgota o trial, recebe uma mensagem com o link de checkout. Após o pagamento,
-a Cakto chama o webhook e o acesso é liberado automaticamente.
+Quando o usuário esgota o trial, recebe no WhatsApp o link da página `/assinatura` do painel.
+De lá ele escolhe o plano, a Stripe processa, o webhook chega e o acesso é liberado — inclusive
+nas renovações mensais seguintes.
 
 ---
 
@@ -257,12 +269,12 @@ Passos:
    CRON_SECRET=<outro segredo aleatório forte>
    ```
 
-   OpenAI, UAZAPI e Cakto podem continuar em `app_secrets`; se preferir fallback,
+   OpenAI, UAZAPI e Stripe podem continuar em `app_secrets`; se preferir fallback,
    configure também suas variáveis no projeto. Deixe `VITE_API_URL` vazio: frontend
    e backend usam a mesma origem.
 5. Faça um preview, valide `/health` e então promova para produção.
-6. No painel UAZAPI, use `https://SEU_DOMINIO/webhook`. Na Cakto, use
-   `https://SEU_DOMINIO/webhooks/cakto`.
+6. No painel UAZAPI, use `https://SEU_DOMINIO/webhook`. Na Stripe, registre o endpoint
+   `https://SEU_DOMINIO/webhooks/stripe`.
 
 Os Cron Jobs já estão declarados em UTC: recorrências diariamente às 09:00 UTC
 (06:00 de Brasília) e reset mensal às 03:05 UTC (00:05 de Brasília). O plano
@@ -314,7 +326,7 @@ pytest
 ```
 
 313 testes sem rede (FakeSupabase + FakeOpenAI scriptado). Cobrem o pipeline completo, funil,
-tools, webhook Cakto, memória/tool-calls, agente e cenários do Redis.
+tools, webhook Stripe (assinatura, liberação, renovação, revogação), memória/tool-calls, agente e cenários do Redis.
 
 ### Smoke test com OpenAI real (opcional)
 
@@ -335,7 +347,7 @@ Usa um banco isolado em memória (não toca no Supabase real); só as chamadas a
 | O que mudar | Onde |
 |---|---|
 | Nome / persona do agente | Admin → Prompt da IA (sem redeploy) |
-| Chaves de API (OpenAI/uazapi/Cakto) e modelos | Admin → Integrações (sem redeploy) |
+| Chaves de API (OpenAI/uazapi/Stripe) e modelos | Admin → Integrações (sem redeploy) |
 | Categorias padrão | `supabase/migrations/0004_seed.sql` |
 | Funil (trial, nudge, checkout) | Admin → Configurações |
 | Planos e preços | Admin → Planos |

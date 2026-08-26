@@ -15,7 +15,7 @@ DEFINITION = {
             "properties": {
                 "tipo": {"type": "string", "enum": ["gasto", "receita"],
                          "description": "gasto (saída de dinheiro) ou receita (entrada)."},
-                "valor": {"type": "number", "description": "Valor em reais, ex: 80.50"},
+                "valor": {"type": "number", "description": "Valor em euros, ex: 80.50"},
                 "titulo": {"type": "string",
                            "description": "Título curto e capitalizado da transação, ex: 'Cinema com a Gata', 'Mercado do Mês'."},
                 "descricao": {"type": "string",

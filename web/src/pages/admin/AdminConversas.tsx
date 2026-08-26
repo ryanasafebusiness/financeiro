@@ -9,11 +9,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MessageSquare, ArrowLeft } from "lucide-react";
+import { Search, MessageSquare, ArrowLeft, Users } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -178,14 +180,12 @@ export default function AdminConversas() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Conversas</h1>
-        <p className="text-muted-foreground">
-          Espelhamento das conversas do WhatsApp por usuário (somente leitura).
-        </p>
-      </div>
+      <PageHeader
+        title="Conversas"
+        description="Espelhamento das conversas do WhatsApp por usuário (somente leitura)."
+      />
 
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         {/* Lista de usuários */}
         <Card className={cn(selected && "hidden lg:block")}>
           <CardHeader>
@@ -212,9 +212,7 @@ export default function AdminConversas() {
                 ))}
               </div>
             ) : users.length === 0 ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">
-                Nenhum usuário encontrado.
-              </div>
+              <EmptyState size="sm" icon={<Users />} title="Nenhum usuário encontrado" />
             ) : (
               <div className="max-h-[60vh] space-y-1 overflow-y-auto pr-1">
                 {users.map((u) => (

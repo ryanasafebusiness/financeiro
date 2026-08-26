@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Category } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
+import { useOpenOnQuery } from "@/hooks/useOpenOnQuery";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,8 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState as UIEmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogHeader,
@@ -66,6 +69,7 @@ export default function Categorias() {
   const qc = useQueryClient();
 
   const [createOpen, setCreateOpen] = useState(false);
+  useOpenOnQuery(() => { setCreateForm(EMPTY_FORM); setCreateOpen(true); });
   const [createForm, setCreateForm] = useState<CategoryFormState>(EMPTY_FORM);
 
   const [editOpen, setEditOpen] = useState(false);
@@ -178,24 +182,21 @@ export default function Categorias() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Categorias</h1>
-          <p className="text-muted-foreground">
-            Crie e edite suas categorias. A descrição ajuda o ZapWallet a
-            classificar seus lançamentos automaticamente.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setCreateForm(EMPTY_FORM);
-            setCreateOpen(true);
-          }}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nova categoria
-        </Button>
-      </div>
+      <PageHeader
+        title="Categorias"
+        description="Crie e edite suas categorias. A descrição ajuda o ZapWallet a classificar seus lançamentos automaticamente."
+        actions={
+          <Button
+            onClick={() => {
+              setCreateForm(EMPTY_FORM);
+              setCreateOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Nova categoria
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -217,11 +218,11 @@ export default function Categorias() {
           {GROUPS.map(({ type, title, description }) =>
             grouped[type].length === 0 ? null : (
               <section key={type}>
-                <div className="mb-3">
-                  <h2 className="text-lg font-semibold">{title}</h2>
-                  <p className="text-sm text-muted-foreground">{description}</p>
+                <div className="mb-3.5">
+                  <h2 className="text-card-title font-semibold text-foreground">{title}</h2>
+                  <p className="text-meta text-muted-foreground">{description}</p>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 stagger">
                   {grouped[type].map((cat) => (
                     <CategoryCard
                       key={cat.id}
@@ -329,26 +330,24 @@ function CategoryCard({
   onDelete: () => void;
 }) {
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col surface-interactive">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="flex items-center gap-2">
-            {cat.emoji ? (
-              <span className="text-xl leading-none">{cat.emoji}</span>
-            ) : (
-              <Tags className="h-4 w-4 text-muted-foreground" />
-            )}
-            {cat.name}
-          </CardTitle>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-[1.0625rem] leading-none">
+              {cat.emoji ? cat.emoji : <Tags className="h-4 w-4 text-muted-foreground" />}
+            </span>
+            <CardTitle className="truncate capitalize">{cat.name}</CardTitle>
+          </div>
           <Badge variant={TYPE_BADGE[cat.type]}>{TYPE_LABEL[cat.type]}</Badge>
         </div>
       </CardHeader>
       <CardContent className="flex-1">
         {cat.description ? (
-          <p className="text-sm text-muted-foreground">{cat.description}</p>
+          <p className="text-meta leading-relaxed text-muted-foreground">{cat.description}</p>
         ) : (
-          <p className="flex items-center gap-1.5 text-sm text-amber-600">
-            <Sparkles className="h-3.5 w-3.5" />
+          <p className="flex items-start gap-1.5 text-meta text-warning">
+            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             Sem descrição — adicione uma para a IA acertar mais.
           </p>
         )}
@@ -358,8 +357,13 @@ function CategoryCard({
           <Pencil className="mr-1 h-4 w-4" />
           Editar
         </Button>
-        <Button size="sm" variant="ghost" onClick={onDelete}>
-          <Trash2 className="mr-1 h-4 w-4" />
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onDelete}
+          className="hover:bg-negative/10 hover:text-negative"
+        >
+          <Trash2 className="h-4 w-4" />
           Excluir
         </Button>
       </CardFooter>
@@ -434,22 +438,17 @@ function CategoryFormFields({
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <Card>
-      <CardContent className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Tags className="h-6 w-6" />
-        </div>
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold">Nenhuma categoria ainda</h3>
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-            Crie sua primeira categoria com uma descrição para a IA classificar
-            seus gastos e receitas.
-          </p>
-        </div>
-        <Button onClick={onCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Criar primeira categoria
-        </Button>
-      </CardContent>
+      <UIEmptyState
+        icon={<Tags />}
+        title="Nenhuma categoria ainda"
+        description="Crie sua primeira categoria com uma descrição para a IA classificar seus gastos e receitas."
+        action={
+          <Button onClick={onCreate}>
+            <Plus className="h-4 w-4" />
+            Criar primeira categoria
+          </Button>
+        }
+      />
     </Card>
   );
 }
