@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 20% 99%;
+    --foreground: 160 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 25% 12%;
+    --primary: 152 60% 40%;          /* verde ZapWallet */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 152 30% 95%;
+    --secondary-foreground: 160 25% 18%;
+    --muted: 150 16% 95%;
+    --muted-foreground: 160 10% 42%;
+    --accent: 152 40% 92%;
+    --accent-foreground: 160 25% 18%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 16% 88%;
+    --input: 150 16% 88%;
+    --ring: 152 60% 40%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 160 24% 8%;
+    --foreground: 150 12% 92%;
+    --card: 160 22% 11%;
+    --card-foreground: 150 12% 92%;
+    --primary: 152 55% 46%;
+    --primary-foreground: 160 30% 8%;
+    --secondary: 160 18% 16%;
+    --secondary-foreground: 150 12% 92%;
+    --muted: 160 16% 16%;
+    --muted-foreground: 150 8% 60%;
+    --accent: 160 18% 18%;
+    --accent-foreground: 150 12% 92%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 160 14% 20%;
+    --input: 160 14% 20%;
+    --ring: 152 55% 46%;
+  }
+
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; font-feature-settings: "rlig" 1, "calt" 1; }
+}

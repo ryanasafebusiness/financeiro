@@ -1,0 +1,76 @@
+# Stack local de desenvolvimento do ZapWallet.
+#   docker compose up --build
+#
+# API recebe o webhook e enfileira; workers processam filas separadas:
+#   worker-inbound  → process_inbound  (rápido, concurrência alta)
+#   worker-agent    → finalize_batch   (lento, IA, concurrência menor)
+#   beat            → tasks agendadas  (recorrências diárias, reset mensal)
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: ./agent-service
+    env_file: ./agent-service/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  # Webhook + dedup + mídia: rápido, pode ter concurrência alta.
+  worker-inbound:
+    build: ./agent-service
+    env_file: ./agent-service/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app.celery worker
+        --queues=inbound
+        --concurrency=8
+        --loglevel=info
+        --hostname=inbound@%h
+
+  # Agente de IA: lento (OpenAI), concurrência menor p/ não estourar rate-limit.
+  worker-agent:
+    build: ./agent-service
+    env_file: ./agent-service/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app.celery worker
+        --queues=agent,celery
+        --concurrency=4
+        --loglevel=info
+        --hostname=agent@%h
+
+  # Beat: dispara as tasks agendadas (não processa, só enfileira).
+  beat:
+    build: ./agent-service
+    env_file: ./agent-service/.env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app.celery beat
+        --loglevel=info
+        --scheduler celery.beat.PersistentScheduler
+        --schedule /tmp/celerybeat-schedule

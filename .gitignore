@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.env
+.env.local
+
+# Node / Vite
+node_modules/
+dist/
+.next/
+dist-ssr/
+*.local
+.vite/
+
+# Editores / SO
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# tsc build info
+*.tsbuildinfo
+.vercel
+.env*
+.agents/

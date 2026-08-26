@@ -1,0 +1,22 @@
+[project]
+name = "zapwallet-agent-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.115.5",
+  "uvicorn[standard]==0.32.1",
+  "pydantic==2.10.3",
+  "pydantic-settings==2.6.1",
+  "celery==5.4.0",
+  "redis[hiredis]==5.2.0",
+  "supabase==2.10.0",
+  "openai==1.57.2",
+  "httpx>=0.26,<0.28",
+  "python-multipart==0.0.17",
+  "python-dateutil==2.9.0.post0",
+  "fpdf2==2.8.1",
+  "fakeredis==2.26.2"
+]
+
+[project.scripts]
+app = "app.main:app"
