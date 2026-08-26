@@ -58,7 +58,7 @@ update public.plans
 -- message_limit deixa de ser 0 (ilimitado): a 4,99 € sobram ~3,73 € depois de IVA
 -- e taxas, e cada mensagem custa OpenAI — sem teto, o usuário intenso dá prejuízo.
 update public.plans p
-   set stripe_price_id         = coalesce(nullif(p.stripe_price_id, ''), v.price_id),
+   set stripe_price_id         = v.price_id,
        stripe_price_id_onetime = coalesce(nullif(p.stripe_price_id_onetime, ''), v.price_onetime),
        price                   = v.price_eur,
        message_limit           = v.msg_limit
