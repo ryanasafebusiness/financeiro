@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — Row Level Security
+--  Gobbi — Row Level Security
 --  Regra geral: o usuário enxerga/edita apenas as próprias linhas; admins
 --  enxergam tudo. INSERTs sensíveis (profiles, messages, payments, memória)
 --  ficam a cargo da service-role key (que bypassa RLS).

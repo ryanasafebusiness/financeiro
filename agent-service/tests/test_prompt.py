@@ -6,7 +6,7 @@ from tests.fakes import final
 
 
 def test_system_prompt_identity():
-    assert "ZapWallet" in SYSTEM_PROMPT
+    assert "Gobbi" in SYSTEM_PROMPT
     assert "WhatsApp" in SYSTEM_PROMPT
 
 
@@ -68,7 +68,7 @@ def test_run_composes_full_system_prompt(db, profile, patch_openai):
     fake = patch_openai([final({"nao_responder": False, "mensagens_cliente": ["oi"]})])
     A.run("sess", "oi", profile)
     system_msg = fake.calls[0]["messages"][0]["content"]
-    assert "ZapWallet" in system_msg               # SYSTEM_PROMPT
+    assert "Gobbi" in system_msg               # SYSTEM_PROMPT
     assert "CONTEXTO ATUAL" in system_msg           # build_context
     assert "FORMATO DE SAÍDA" in system_msg         # OUTPUT_CONTRACT
     assert "Gabriel" in system_msg                  # nome do usuário injetado

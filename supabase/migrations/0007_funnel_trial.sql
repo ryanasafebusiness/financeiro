@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — funil de vendas: trial limitado (dias + cota) + nudges
+--  Gobbi — funil de vendas: trial limitado (dias + cota) + nudges
 --
 --  Config do funil vive em app_settings (fonte ÚNICA lida pelo backend via
 --  settings_svc). O admin edita pelo painel; o .env não controla mais nada

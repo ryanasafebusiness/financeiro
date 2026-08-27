@@ -71,7 +71,7 @@ def test_bubble_delay_range(text):
 
 def test_gating_message_has_checkout(db):
     msg = tasks._gating_message()
-    assert "ZapWallet" in msg and "/assinatura" in msg
+    assert "Gobbi" in msg and "/assinatura" in msg
 
 
 def test_incoming_text_for_log_text():

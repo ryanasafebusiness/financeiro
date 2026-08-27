@@ -1,4 +1,4 @@
-// Tipos do banco do ZapWallet. Reflete supabase/migrations/0001_schema.sql.
+// Tipos do banco do Gobbi. Reflete supabase/migrations/0001_schema.sql.
 // Em produção, regenere com: supabase gen types typescript --project-id <ref>
 //
 // IMPORTANTE: os Row são `type` (não `interface`) de propósito — apenas type

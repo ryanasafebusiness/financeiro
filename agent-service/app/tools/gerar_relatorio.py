@@ -117,7 +117,7 @@ def execute(ctx: dict, periodo: str = "mes_atual", formato: str = "resumo",
         generated_at=datetime.now(tz),
         currency=currency,
     )
-    doc_name = f"Relatório ZapWallet - {_safe_filename(label)}.pdf"
+    doc_name = f"Relatório Gobbi - {_safe_filename(label)}.pdf"
     caption = (
         f"📊 Relatório de {label}\n"
         f"Receitas: {format_money(resumo['total_income'], currency)}\n"

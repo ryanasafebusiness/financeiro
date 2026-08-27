@@ -200,7 +200,7 @@ export default function Recorrentes() {
           <EmptyState
             icon={<Repeat />}
             title="Nenhuma recorrência ainda"
-            description="Crie uma para seu salário, aluguel, assinatura… e o ZapWallet lança sozinho no dia certo."
+            description="Crie uma para seu salário, aluguel, assinatura… e o Gobbi lança sozinho no dia certo."
             action={
               <Button onClick={() => { setForm(empty); setOpen(true); }}>
                 <Plus className="h-4 w-4" /> Criar primeira

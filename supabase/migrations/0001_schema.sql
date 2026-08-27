@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — schema base
+--  Gobbi — schema base
 --  Cada usuário (1 número de WhatsApp = 1 perfil) é o tenant. Quase todas as
 --  tabelas são escopadas por user_id. O agent-service usa a service-role key
 --  (bypassa RLS); o painel usa a anon key + JWT do usuário (RLS aplicada).

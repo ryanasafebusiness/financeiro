@@ -30,7 +30,7 @@
           "experimentalTriggers": [
             {
               "type": "queue/v2beta",
-              "topic": "zapwallet-inbound",
+              "topic": "gobbi-inbound",
               "retryAfterSeconds": 30,
               "initialDelaySeconds": 0
             }
@@ -41,7 +41,7 @@
           "experimentalTriggers": [
             {
               "type": "queue/v2beta",
-              "topic": "zapwallet-finalize",
+              "topic": "gobbi-finalize",
               "retryAfterSeconds": 60,
               "initialDelaySeconds": 0
             }

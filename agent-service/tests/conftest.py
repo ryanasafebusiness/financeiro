@@ -1,4 +1,4 @@
-"""Fixtures e ambiente de teste do ZapWallet.
+"""Fixtures e ambiente de teste do Gobbi.
 
 Define env vars dummy ANTES de importar a app (settings exige algumas), troca o
 client Supabase por um dublê em memória, deixa o OpenAI scriptável e captura os
@@ -13,10 +13,10 @@ os.environ.setdefault("OPENAI_API_KEY", "sk-test")
 os.environ.setdefault("REDIS_URL", "fake")
 os.environ.setdefault("UAZAPI_BASE_URL", "https://test.uazapi.com")
 os.environ.setdefault("UAZAPI_TOKEN", "test-token")
-os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_zapwallet")
+os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_gobbi")
 os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_test")
 os.environ.setdefault("FREE_TRIAL_DAYS", "7")
-os.environ.setdefault("APP_BASE_URL", "https://app.zapwallet.test")
+os.environ.setdefault("APP_BASE_URL", "https://app.gobbi.test")
 
 from datetime import datetime, timedelta, timezone  # noqa: E402
 

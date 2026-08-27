@@ -214,7 +214,7 @@ export default function AdminDashboard() {
     <div>
       <PageHeader
         title="Visão geral"
-        description="Métricas e atividade do ZapWallet em tempo real."
+        description="Métricas e atividade do Gobbi em tempo real."
       />
 
       {statsLoading ? (

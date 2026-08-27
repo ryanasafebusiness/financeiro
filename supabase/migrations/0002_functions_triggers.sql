@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — funções e triggers
+--  Gobbi — funções e triggers
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── is_admin(): usado nas policies sem recursão (SECURITY DEFINER) ────────────

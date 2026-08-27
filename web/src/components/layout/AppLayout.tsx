@@ -34,7 +34,7 @@ function trialMessage(profile?: Profile | null): string | null {
 
   if (remaining !== null && remaining <= 3) {
     return remaining === 0
-      ? "Você usou todas as suas mensagens grátis. Assine para continuar usando o ZapWallet 👇"
+      ? "Você usou todas as suas mensagens grátis. Assine para continuar usando o Gobbi 👇"
       : `Faltam só ${remaining} mensagem${remaining === 1 ? "" : "s"} no seu trial grátis — assine agora para não perder o acesso.`;
   }
   if (daysLeft !== null && daysLeft <= 1) {

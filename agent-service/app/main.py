@@ -1,4 +1,4 @@
-"""ZapWallet — FastAPI.
+"""Gobbi — FastAPI.
 
 Recebe o webhook da uazapi e enfileira no Vercel Queues em produção ou no
 Celery em desenvolvimento/deploy tradicional.
@@ -24,7 +24,7 @@ logging.root.addHandler(_admin_handler)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s – %(message)s")
 log = logging.getLogger(__name__)
 
-app = FastAPI(title="ZapWallet API")
+app = FastAPI(title="Gobbi API")
 
 app.add_middleware(
     CORSMiddleware,

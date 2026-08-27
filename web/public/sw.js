@@ -1,4 +1,4 @@
-const CACHE = "zapwallet-shell-v1";
+const CACHE = "gobbi-shell-v1";
 const SHELL = [
   "/",
   "/index.html",

@@ -3,7 +3,7 @@
 Guia para o Claude Code trabalhar neste repositório.
 
 ## O que é
-SaaS de finanças pessoais via WhatsApp ("ZapWallet"). Migração de um fluxo n8n para um serviço
+SaaS de finanças pessoais via WhatsApp ("Gobbi"). Migração de um fluxo n8n para um serviço
 Python (FastAPI + Celery) com uazapi, OpenAI, Supabase e Stripe. Três partes:
 
 | Pasta | O que é |
@@ -58,7 +58,7 @@ em modo Celery eager.
   2. `finalize_batch(sender, msg_id)` — só processa se ainda for o "dono" do marcador (debounce),
      drena o lote, roda guardrails + agente, envia bolhas, persiste memória, incrementa contador.
 - **Agente** (`services/ai_agent_svc.py`): loop de tool-calling OpenAI; system prompt = persona
-  ZapWallet (default em `app/prompts.py::SYSTEM_PROMPT`, editável pelo painel admin) + contexto
+  Gobbi (default em `app/prompts.py::SYSTEM_PROMPT`, editável pelo painel admin) + contexto
   dinâmico (`build_context`) + contrato de saída JSON `OUTPUT_CONTRACT`
   `{nao_responder, mensagens_cliente}`. Despacha 8 tools de `app/tools/`.
 - **Tools** (`app/tools/*.py`): cada uma expõe `DEFINITION` (schema OpenAI) e

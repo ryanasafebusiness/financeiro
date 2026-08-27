@@ -125,7 +125,7 @@ export default function Login() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-primary text-primary-foreground shadow-md">
             <Wallet className="h-6 w-6" />
           </div>
-          <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">ZapWallet</h1>
+          <h1 className="text-[1.75rem] font-bold tracking-tight text-foreground">Gobbi</h1>
           <p className="mt-1 text-body text-muted-foreground">Suas finanças, direto no WhatsApp.</p>
         </div>
 
@@ -204,7 +204,7 @@ export default function Login() {
         </Card>
 
         <p className="mt-6 text-center text-label text-muted-foreground">
-          Ao continuar, você concorda em receber mensagens do ZapWallet no WhatsApp.
+          Ao continuar, você concorda em receber mensagens do Gobbi no WhatsApp.
         </p>
       </div>
     </div>

@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — categorias por usuário, com descrição para a IA
+--  Gobbi — categorias por usuário, com descrição para a IA
 --
 --  Antes: 15 categorias globais fixas (user_id = NULL), sem descrição.
 --  Agora: cada usuário ganha a sua própria CÓPIA das categorias na criação

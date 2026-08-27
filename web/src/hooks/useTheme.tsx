@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 export type Theme = "light" | "dark" | "system";
 export type ResolvedTheme = Exclude<Theme, "system">;
 
-const THEME_STORAGE_KEY = "zapwallet-theme";
+const THEME_STORAGE_KEY = "gobbi-theme";
 
 type ThemeContextValue = {
   theme: Theme;

@@ -1,6 +1,6 @@
 """Loop de tool-calling (OpenAI, síncrono) com saída JSON estruturada.
 
-O agente conversa como o ZapWallet, registra/consulta finanças via tools e sua
+O agente conversa como o Gobbi, registra/consulta finanças via tools e sua
 mensagem FINAL deve ser um único objeto JSON: {nao_responder, mensagens_cliente}.
 `run()` devolve esse dict; o pipeline (tasks.py) transforma mensagens_cliente em
 bolhas no WhatsApp e persiste a memória em chat_histories.

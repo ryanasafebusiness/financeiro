@@ -1,6 +1,6 @@
 -- ===== 0001_schema.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — schema base
+--  Gobbi — schema base
 --  Cada usuário (1 número de WhatsApp = 1 perfil) é o tenant. Quase todas as
 --  tabelas são escopadas por user_id. O agent-service usa a service-role key
 --  (bypassa RLS); o painel usa a anon key + JWT do usuário (RLS aplicada).
@@ -145,7 +145,7 @@ create table if not exists public.app_settings (
 
 -- ===== 0002_functions_triggers.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — funções e triggers
+--  Gobbi — funções e triggers
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── is_admin(): usado nas policies sem recursão (SECURITY DEFINER) ────────────
@@ -246,7 +246,7 @@ $$;
 
 -- ===== 0003_rls.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — Row Level Security
+--  Gobbi — Row Level Security
 --  Regra geral: o usuário enxerga/edita apenas as próprias linhas; admins
 --  enxergam tudo. INSERTs sensíveis (profiles, messages, payments, memória)
 --  ficam a cargo da service-role key (que bypassa RLS).
@@ -324,7 +324,7 @@ create policy "settings_admin_write" on public.app_settings for all
 
 -- ===== 0004_seed.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — seed (categorias padrão, planos, settings)
+--  Gobbi — seed (categorias padrão, planos, settings)
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── categorias padrão globais (user_id = NULL) ────────────────────────────────
@@ -366,7 +366,7 @@ on conflict (key) do nothing;
 
 -- ===== 0005_rich_transactions_recurring.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — transações ricas + transações recorrentes
+--  Gobbi — transações ricas + transações recorrentes
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── transactions: campos ricos ───────────────────────────────────────────────
@@ -444,7 +444,7 @@ create policy "recurring_delete" on public.recurring_transactions for delete
 
 -- ===== 0006_user_categories.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — categorias por usuário, com descrição para a IA
+--  Gobbi — categorias por usuário, com descrição para a IA
 --
 --  Antes: 15 categorias globais fixas (user_id = NULL), sem descrição.
 --  Agora: cada usuário ganha a sua própria CÓPIA das categorias na criação
@@ -545,7 +545,7 @@ end $$;
 
 -- ===== 0007_funnel_trial.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — funil de vendas: trial limitado (dias + cota) + nudges
+--  Gobbi — funil de vendas: trial limitado (dias + cota) + nudges
 --
 --  Config do funil vive em app_settings (fonte ÚNICA lida pelo backend via
 --  settings_svc). O admin edita pelo painel; o .env não controla mais nada
@@ -582,7 +582,7 @@ $$;
 
 -- ===== 0008_app_secrets.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — chaves de integração geridas pelo painel admin
+--  Gobbi — chaves de integração geridas pelo painel admin
 --
 --  Diferente de app_settings (legível por qualquer usuário autenticado — RLS
 --  "settings_select using(true)"), os SEGREDOS (OpenAI key, uazapi token, Cakto
@@ -614,7 +614,7 @@ revoke all on public.app_secrets from anon, authenticated;
 
 -- ===== 0009_stripe.sql =====
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — migração da Cakto para a Stripe (assinaturas recorrentes)
+--  Gobbi — migração da Cakto para a Stripe (assinaturas recorrentes)
 --
 --  O que muda no modelo:
 --    • plans.cakto_offer_id      -> plans.stripe_price_id      (price_...)
@@ -660,7 +660,7 @@ update public.plans
  where stripe_price_id is not null
    and stripe_price_id not like 'price_%';
 
--- Liga os planos aos Prices criados na conta Stripe (produto ZapWallet Premium,
+-- Liga os planos aos Prices criados na conta Stripe (produto Gobbi Premium,
 -- prod_V94SSYg29c5q01) e alinha preço e cota com a realidade portuguesa.
 --
 -- Os valores antigos (19,90 / 49,90 / 149,90) eram números em REAIS herdados da

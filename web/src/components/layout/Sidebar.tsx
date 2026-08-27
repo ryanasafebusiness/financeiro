@@ -109,7 +109,7 @@ export function Sidebar({
         </div>
         {!collapsed && (
           <span className="text-[0.9375rem] font-semibold tracking-tight text-foreground">
-            ZapWallet
+            Gobbi
           </span>
         )}
       </div>

@@ -1,4 +1,4 @@
-# Stack local de desenvolvimento do ZapWallet.
+# Stack local de desenvolvimento do Gobbi.
 #   docker compose up --build
 #
 # API recebe o webhook e enfileira; workers processam filas separadas:

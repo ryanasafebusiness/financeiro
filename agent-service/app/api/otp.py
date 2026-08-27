@@ -43,7 +43,7 @@ def request_otp(body: RequestBody):
     redis_svc.set_otp(phone, code, ttl=300)
 
     msg = (
-        f"🔐 Seu código de acesso ao ZapWallet é: {code}\n"
+        f"🔐 Seu código de acesso ao Gobbi é: {code}\n"
         "Ele expira em 5 minutos. Se não foi você, ignore esta mensagem."
     )
     # Envia para o número como o perfil/WhatsApp o conhece (garante entrega).

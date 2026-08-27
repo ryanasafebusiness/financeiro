@@ -1,6 +1,6 @@
 {
-  "name": "ZapWallet — Finanças no WhatsApp",
-  "short_name": "ZapWallet",
+  "name": "Gobbi — Finanças no WhatsApp",
+  "short_name": "Gobbi",
   "description": "Controle suas finanças pessoais de forma simples e rápida.",
   "lang": "pt-BR",
   "start_url": "/dashboard?source=pwa",

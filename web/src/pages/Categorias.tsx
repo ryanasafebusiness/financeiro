@@ -184,7 +184,7 @@ export default function Categorias() {
     <div>
       <PageHeader
         title="Categorias"
-        description="Crie e edite suas categorias. A descrição ajuda o ZapWallet a classificar seus lançamentos automaticamente."
+        description="Crie e edite suas categorias. A descrição ajuda o Gobbi a classificar seus lançamentos automaticamente."
         actions={
           <Button
             onClick={() => {
@@ -427,7 +427,7 @@ function CategoryFormFields({
           }
         />
         <p className="text-xs text-muted-foreground">
-          Liste exemplos e palavras-chave; o ZapWallet usa isso para classificar
+          Liste exemplos e palavras-chave; o Gobbi usa isso para classificar
           seus lançamentos pelo WhatsApp.
         </p>
       </div>

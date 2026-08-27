@@ -157,7 +157,7 @@ export default function Assinatura() {
             {!isTrial && (
               <p className="text-sm text-muted-foreground">
                 O acesso é liberado automaticamente assim que o pagamento é confirmado.
-                Depois disso, é só mandar uma mensagem no WhatsApp para começar a usar o ZapWallet.
+                Depois disso, é só mandar uma mensagem no WhatsApp para começar a usar o Gobbi.
               </p>
             )}
           </CardContent>
@@ -356,7 +356,7 @@ export default function Assinatura() {
           <p className="text-meta leading-relaxed text-foreground">
             O pagamento é processado pela Stripe e seu acesso é liberado
             automaticamente. Depois é só voltar ao WhatsApp e mandar um oi para o
-            ZapWallet 💚
+            Gobbi 💚
           </p>
         </CardContent>
       </Card>

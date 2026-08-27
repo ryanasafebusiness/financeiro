@@ -1,5 +1,5 @@
 {
-  "name": "zapwallet-queue-consumers",
+  "name": "gobbi-queue-consumers",
   "version": "0.1.0",
   "private": true,
   "engines": {

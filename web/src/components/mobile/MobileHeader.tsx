@@ -33,7 +33,7 @@ export function MobileHeader({
         </button>
         <div className="min-w-0 flex-1">
           <p className="text-label text-primary-foreground/80">Sua vida financeira</p>
-          <p className="truncate text-body font-semibold text-primary-foreground">{firstName ? `Olá, ${firstName}` : "ZapWallet"}</p>
+          <p className="truncate text-body font-semibold text-primary-foreground">{firstName ? `Olá, ${firstName}` : "Gobbi"}</p>
         </div>
         <button type="button" onClick={onOpenSearch} aria-label="Buscar" className="flex h-10 w-10 items-center justify-center rounded-full text-primary-foreground transition-colors active:bg-primary-hover">
           <Search className="h-5 w-5" />

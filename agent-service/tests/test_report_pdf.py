@@ -150,7 +150,7 @@ def test_relatorio_pdf_personalizado_label(ctx, db, sent_media):
     assert r["periodo"]["label"] == "01/03/2026 a 31/03/2026"
     assert r["gastos"] == 10.0
     assert "/" not in sent_media[0]["doc_name"]
-    assert sent_media[0]["doc_name"] == "Relatório ZapWallet - 01-03-2026 a 31-03-2026.pdf"
+    assert sent_media[0]["doc_name"] == "Relatório Gobbi - 01-03-2026 a 31-03-2026.pdf"
 
 
 def test_relatorio_label_mes_atual(ctx, db):

@@ -13,8 +13,8 @@ from fastapi import Request
 
 from app.config import settings
 
-INBOUND_TOPIC = "zapwallet-inbound"
-FINALIZE_TOPIC = "zapwallet-finalize"
+INBOUND_TOPIC = "gobbi-inbound"
+FINALIZE_TOPIC = "gobbi-finalize"
 _TOPIC_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 

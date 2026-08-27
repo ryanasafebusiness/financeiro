@@ -1,4 +1,4 @@
-"""Gera o PDF de um relatório financeiro do ZapWallet (bytes), via fpdf2.
+"""Gera o PDF de um relatório financeiro do Gobbi (bytes), via fpdf2.
 
 Função pura: recebe os dados já agregados (não toca no banco) e devolve os bytes
 do PDF — fácil de testar offline. Usa as fontes core (Helvetica) com encoding
@@ -78,7 +78,7 @@ class _ReportPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font("Helvetica", "B", 16)
         self.set_xy(14, 5)
-        self.cell(120, 8, "ZapWallet")
+        self.cell(120, 8, "Gobbi")
         self.set_font("Helvetica", "", 10)
         self.set_xy(14, 13)
         self.cell(120, 5, "Relatório Financeiro")
@@ -95,7 +95,7 @@ class _ReportPDF(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(*GRAY)
-        self.cell(91, 6, f"Gerado por ZapWallet em {self.generated_str}")
+        self.cell(91, 6, f"Gerado por Gobbi em {self.generated_str}")
         self.cell(91, 6, f"Página {self.page_no()}", align="R")
 
     # ── blocos ──────────────────────────────────────────────────────────────

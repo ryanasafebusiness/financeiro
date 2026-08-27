@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 _eager = settings.effective_redis_url.lower() == "fake"
 
 celery = Celery(
-    "zapwallet",
+    "gobbi",
     broker=settings.broker_url if not _eager else "memory://",
     backend=settings.backend_url if not _eager else "cache+memory://",
     include=["app.tasks"],

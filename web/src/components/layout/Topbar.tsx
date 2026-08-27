@@ -52,7 +52,7 @@ export function Topbar({
           <Menu className="h-5 w-5" />
         </button>
 
-        <span className="text-[0.9375rem] font-semibold tracking-tight text-primary-foreground md:hidden">ZapWallet</span>
+        <span className="text-[0.9375rem] font-semibold tracking-tight text-primary-foreground md:hidden">Gobbi</span>
 
         {/* Gatilho do command menu */}
         <button
@@ -154,7 +154,7 @@ export function Topbar({
                 {profile?.name || "Sua conta"}
               </p>
               <p className="truncate text-label text-muted-foreground">
-                {profile?.plan ? `Plano ${profile.plan}` : "ZapWallet"}
+                {profile?.plan ? `Plano ${profile.plan}` : "Gobbi"}
               </p>
             </div>
             <DropdownSeparator />

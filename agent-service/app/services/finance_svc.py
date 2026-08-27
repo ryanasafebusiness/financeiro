@@ -1,4 +1,4 @@
-"""Lógica financeira do ZapWallet: transações, metas, limites e agregações.
+"""Lógica financeira do Gobbi: transações, metas, limites e agregações.
 
 Camada de domínio usada pelas tools do agente e pela API do painel. Tudo
 síncrono, escopado por user_id, via service-role (RLS bypassada).

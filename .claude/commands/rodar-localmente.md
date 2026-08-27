@@ -3,7 +3,7 @@ description: Setup guiado completo — instala dependências, configura o .env i
 allowed-tools: Bash, Read, Write, Edit, AskUserQuestion
 ---
 
-# /rodar-localmente — ZapWallet
+# /rodar-localmente — Gobbi
 
 Setup guiado. Execute as fases na ordem, de forma **idempotente** (não duplique o que já está rodando).
 
@@ -144,13 +144,13 @@ curl -fsS http://localhost:8000/health 2>/dev/null && echo "API já no ar" || ec
 Se parada:
 ```bash
 # run_in_background: true
-cd agent-service && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > /tmp/zapwallet_api.log 2>&1
+cd agent-service && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > /tmp/gobbi_api.log 2>&1
 ```
 
 Se `REDIS_URL` não for `fake`, suba também o worker Celery:
 ```bash
 # run_in_background: true  (só se REDIS_URL != fake)
-cd agent-service && .venv/bin/celery -A app.celery_app.celery worker --loglevel=info > /tmp/zapwallet_worker.log 2>&1
+cd agent-service && .venv/bin/celery -A app.celery_app.celery worker --loglevel=info > /tmp/gobbi_worker.log 2>&1
 ```
 
 Confirme que subiu (aguarde até 20s):
@@ -160,7 +160,7 @@ for i in $(seq 1 20); do curl -fsS http://localhost:8000/health && break; sleep 
 
 Se não responder, mostre o final do log e pare:
 ```bash
-tail -40 /tmp/zapwallet_api.log
+tail -40 /tmp/gobbi_api.log
 ```
 
 ### Front (Vite — porta 8080)
@@ -172,7 +172,7 @@ curl -fsS http://localhost:8080 2>/dev/null && echo "Front já no ar" || echo "F
 Se parado:
 ```bash
 # run_in_background: true
-cd web && npm run dev > /tmp/zapwallet_web.log 2>&1
+cd web && npm run dev > /tmp/gobbi_web.log 2>&1
 ```
 
 ---
@@ -181,24 +181,24 @@ cd web && npm run dev > /tmp/zapwallet_web.log 2>&1
 
 Verifique se o túnel já está ativo:
 ```bash
-TUNNEL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/zapwallet_cf.log 2>/dev/null | head -1)
+TUNNEL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/gobbi_cf.log 2>/dev/null | head -1)
 [ -n "$TUNNEL" ] && echo "Túnel já ativo: $TUNNEL" || echo "Subindo túnel..."
 ```
 
 Se não estiver ativo:
 ```bash
 # run_in_background: true
-cloudflared tunnel --url http://localhost:8000 > /tmp/zapwallet_cf.log 2>&1
+cloudflared tunnel --url http://localhost:8000 > /tmp/gobbi_cf.log 2>&1
 ```
 
 Aguarde a URL aparecer (até 30s):
 ```bash
 for i in $(seq 1 30); do
-  TUNNEL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/zapwallet_cf.log | head -1)
+  TUNNEL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/gobbi_cf.log | head -1)
   [ -n "$TUNNEL" ] && echo "TUNNEL=$TUNNEL" && break
   sleep 1
 done
-[ -z "$TUNNEL" ] && echo "FALHOU — veja /tmp/zapwallet_cf.log" && exit 1
+[ -z "$TUNNEL" ] && echo "FALHOU — veja /tmp/gobbi_cf.log" && exit 1
 ```
 
 Valide o túnel:
@@ -240,7 +240,7 @@ Se falhar ou as credenciais estiverem em branco, instrua o usuário:
 ## Fase 7 — Relatório final
 
 ```
-✅ ZapWallet rodando localmente
+✅ Gobbi rodando localmente
 
 • Back  (API):    http://localhost:8000   (/health · /docs)
 • Front (painel): http://localhost:8080
@@ -248,10 +248,10 @@ Se falhar ou as credenciais estiverem em branco, instrua o usuário:
 • Webhook uazapi: <TUNNEL>/webhook        [registrado automaticamente | registre manualmente]
 
 Logs:
-• API:    /tmp/zapwallet_api.log
-• Worker: /tmp/zapwallet_worker.log  (se Redis real)
-• Front:  /tmp/zapwallet_web.log
-• Túnel:  /tmp/zapwallet_cf.log
+• API:    /tmp/gobbi_api.log
+• Worker: /tmp/gobbi_worker.log  (se Redis real)
+• Front:  /tmp/gobbi_web.log
+• Túnel:  /tmp/gobbi_cf.log
 
 Obs.: a URL trycloudflare muda a cada execução — re-registre o webhook quando rodar de novo.
 ```

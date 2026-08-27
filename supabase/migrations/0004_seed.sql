@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — seed (categorias padrão, planos, settings)
+--  Gobbi — seed (categorias padrão, planos, settings)
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── categorias padrão globais (user_id = NULL) ────────────────────────────────

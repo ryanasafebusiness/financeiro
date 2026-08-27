@@ -90,7 +90,7 @@ def create_checkout_session(
         "cancel_url": cancel_url,
         "client_reference_id": profile_id,
         "metadata": dict(link),
-        # O tenant do ZapWallet é o telefone do WhatsApp; a Stripe não coleta
+        # O tenant do Gobbi é o telefone do WhatsApp; a Stripe não coleta
         # telefone por padrão, então pedimos explicitamente.
         "phone_number_collection": {"enabled": True},
         "allow_promotion_codes": True,

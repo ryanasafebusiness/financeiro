@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — transações ricas + transações recorrentes
+--  Gobbi — transações ricas + transações recorrentes
 -- ════════════════════════════════════════════════════════════════════════
 
 -- ── transactions: campos ricos ───────────────────────────────────────────────

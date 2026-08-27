@@ -1,4 +1,4 @@
-# ZapWallet 💚
+# Gobbi 💚
 
 SaaS de **finanças pessoais via WhatsApp**. O usuário conversa com um agente no WhatsApp para
 registrar gastos e receitas, definir metas e limites de gasto e pedir relatórios — tudo por
@@ -71,7 +71,7 @@ agent-service/            # backend Python
   Procfile                # web / worker-inbound / worker-agent / beat
   Dockerfile
 supabase/migrations/      # 0001–0007: schema, funções, RLS, seed, ricas, categorias, funil
-zapwallet_schema.sql      # dump completo (concat das migrations — referência rápida)
+gobbi_schema.sql      # dump completo (concat das migrations — referência rápida)
 web/                      # painel React (usuário + admin)
 docker-compose.yml        # redis + api + worker-inbound + worker-agent + beat
 queue-service/            # consumidores privados do Vercel Queues (Node/Next)
@@ -91,7 +91,7 @@ vercel.json               # Services, rotas, filas e Cron Jobs
    supabase link --project-ref <ref>
    supabase db push
    ```
-   > `zapwallet_schema.sql` na raiz é um atalho — contém todas as migrations concatenadas.
+   > `gobbi_schema.sql` na raiz é um atalho — contém todas as migrations concatenadas.
    > Funciona para criar tudo do zero no SQL Editor em uma passagem só.
 3. Em **Settings → API**, copie: `URL`, `anon key`, `service_role key`.
 4. O login usa e-mail sintético (`wa<telefone>@<EMAIL_DOMAIN>`) entregue por WhatsApp — nenhum
@@ -248,7 +248,7 @@ O `vercel.json` publica três Services no mesmo domínio:
 
 - `frontend`: painel Vite e fallback SPA;
 - `backend`: FastAPI para `/api`, `/admin`, `/webhook`, `/webhooks/*` e `/health`;
-- `queues`: consumidores privados dos tópicos `zapwallet-inbound` e `zapwallet-finalize`.
+- `queues`: consumidores privados dos tópicos `gobbi-inbound` e `gobbi-finalize`.
 
 Passos:
 

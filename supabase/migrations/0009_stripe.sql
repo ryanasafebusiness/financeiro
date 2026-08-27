@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — migração da Cakto para a Stripe (assinaturas recorrentes)
+--  Gobbi — migração da Cakto para a Stripe (assinaturas recorrentes)
 --
 --  O que muda no modelo:
 --    • plans.cakto_offer_id      -> plans.stripe_price_id      (price_...)
@@ -45,7 +45,7 @@ update public.plans
  where stripe_price_id is not null
    and stripe_price_id not like 'price_%';
 
--- Liga os planos aos Prices criados na conta Stripe (produto ZapWallet Premium,
+-- Liga os planos aos Prices criados na conta Stripe (produto Gobbi Premium,
 -- prod_V94SSYg29c5q01) e alinha preço e cota com a realidade portuguesa.
 --
 -- Os valores antigos (19,90 / 49,90 / 149,90) eram números em REAIS herdados da

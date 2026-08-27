@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
  * Command menu (⌘K / Ctrl+K).
  * Base do algoritmo de ranking/navegação adaptada do "Command Palette" do
  * 21st.dev (@ddoemonn), reescrita sem motion/react e sem Radix para respeitar
- * os primitives próprios do ZapWallet.
+ * os primitives próprios do Gobbi.
  * ------------------------------------------------------------------------ */
 
 const BOUNDARY = /[\s\-_/.:]/;

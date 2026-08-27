@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════════
---  ZapWallet — chaves de integração geridas pelo painel admin
+--  Gobbi — chaves de integração geridas pelo painel admin
 --
 --  Diferente de app_settings (legível por qualquer usuário autenticado — RLS
 --  "settings_select using(true)"), os SEGREDOS (OpenAI key, uazapi token, Cakto

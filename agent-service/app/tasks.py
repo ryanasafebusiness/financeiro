@@ -206,7 +206,7 @@ def finalize_batch(sender: str, msg_id: str) -> None:
 def _gating_message() -> str:
     """Mensagem de boas-vindas + checkout p/ quem nunca teve plano."""
     return (
-        "Oi! Eu sou o ZapWallet 💚\n"
+        "Oi! Eu sou o Gobbi 💚\n"
         "Vi aqui que você ainda não tem um plano ativo. Sem problema!\n"
         f"É só ativar por aqui e me mandar uma mensagem: {settings_svc.get_subscribe_url()}"
     )
@@ -230,7 +230,7 @@ def _gating_state(profile: dict):
         if limit and used >= limit:
             if is_trial:
                 return ("trial_quota",
-                        f"Você usou suas {limit} mensagens grátis do ZapWallet 💚\n"
+                        f"Você usou suas {limit} mensagens grátis do Gobbi 💚\n"
                         f"Curtiu? Pra continuar organizando seus gastos é só assinar: {url}",
                         "trial_quota")
             return ("paid_quota",
@@ -242,12 +242,12 @@ def _gating_state(profile: dict):
     # Fora da validade (premium_until no passado)
     if is_trial:
         return ("trial_expired",
-                "Seu teste grátis do ZapWallet chegou ao fim ⏳\n"
+                "Seu teste grátis do Gobbi chegou ao fim ⏳\n"
                 f"Pra continuar comigo, escolhe um plano aqui: {url}",
                 "trial_expired")
     if profile.get("plan"):
         return ("paid_expired",
-                "Seu plano do ZapWallet expirou 😕\n"
+                "Seu plano do Gobbi expirou 😕\n"
                 f"Reativa em 1 minutinho aqui: {url}",
                 "gating")
     return ("no_plan", _gating_message(), "gating")
